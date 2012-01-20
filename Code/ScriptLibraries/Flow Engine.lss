@@ -1,0 +1,819 @@
+'++LotusScript Development Environment:2:5:(Options):0:74
+%REM
+	Copyright 2008 - 2009 Conxsys 
+	Licensed under the Apache License, Version 2.0 (the "License"); 
+	you may not use this file except in compliance with the License. 
+	You may obtain a copy of the License at
+	
+	http://www.apache.org/licenses/LICENSE-2.0 
+	
+	Unless required by applicable law or agreed to in writing, software 
+	distributed under the License is distributed on an "AS IS" BASIS, 
+	WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
+	See the License for the specific language governing permissions and 
+	limitations under the License
+%ENDREM
+
+Option Public
+Option Declare
+
+Use "Flow Dependencies"
+Use "Flow Documents"
+
+'++LotusScript Development Environment:2:5:(Forward):0:1
+Declare Public Class FlowEngine
+Declare Sub LogCleanup(Byval retention As Integer, logger As FlowEngine)
+
+'++LotusScript Development Environment:2:5:(Declarations):0:10
+'********************************************************************************************
+'FLOW CLASS
+'********************************************************************************************
+Public Class FlowEngine
+	'Declarations
+	'-------------------------------------------------------
+	'General
+	Private m_session As NotesSession
+	Private m_logDb As NotesDatabase
+	Private m_logLevel As Integer
+	
+	'Flow documents
+	Private m_logDoc As FlowDocument
+	Private m_logMail As FlowDocument
+	Private m_logFile As FlowDocument
+	Private m_logConsole As FlowDocument
+	Private m_logMsgbox As FlowDocument
+	
+	'Flags
+	Private m_logEventsToDoc As Boolean
+	Private m_logErrorsToDoc As Boolean
+	Private m_logEventsToMail As Boolean
+	Private m_logErrorsToMail As Boolean
+	Private m_logEventsToFile As Boolean
+	Private m_logErrorsToFile As Boolean
+	Private m_logEventsToConsole As Boolean
+	Private m_logErrorsToConsole As Boolean
+	Private m_logEventsToMsgbox As Boolean
+	Private m_logErrorsToMsgbox As Boolean
+	
+	'Settings
+	Private m_logMailRecipients As String		'************** Added in Beta 5 **************
+	Private m_logMailSubject As String			'************** Added in Beta 5 **************
+	Private m_logFileName As String				'************** Added in Beta 5 **************
+	Private m_logDocViewIcon As Integer			'************** Added in Beta 5 **************
+	Private m_logDocContinueText As String		'************** Added in Beta 5 **************
+	Private m_cacheDepth As Integer				'************** Added in Beta 5 **************
+	
+'=======================================================
+'PUBLIC METHODS
+'=======================================================
+	
+	'New (Constructor)
+	'-------------------------------------------------------
+	Public Sub New()
+		On Error Goto ErrHandler
+		
+		'Instantiations
+		Set Me.m_session = New NotesSession
+		Set Me.LogDatabase = Me.m_session.CurrentDatabase
+		
+		'Set defaults
+		Let Me.Level = LOG_LEVEL_DEFAULT
+		Let Me.LogEventsToDoc = True
+		Let Me.LogErrorsToDoc = True
+		
+		Exit Sub
+		
+ErrHandler:
+		Error Err, Error & Chr$(13) & ERR_ONLINE & Erl & ERR_INMODULE & Getthreadinfo(1)
+	End Sub
+	
+	'Delete (Destructor)
+	'-------------------------------------------------------
+	Public Sub Delete()
+		Call Me.Close
+	End Sub
+	
+	'Close
+	'-------------------------------------------------------
+	Public Sub Close()
+		On Error Goto ErrHandler
+		
+		If Not(Me.m_logDoc Is Nothing) Then
+			Call Me.LogDocument.Close
+			Set Me.LogDocument = Nothing
+		End If
+		
+		If Not(Me.m_logMail Is Nothing) Then
+			Call Me.LogMail.Close
+			Set Me.LogMail = Nothing
+		End If
+		
+		If Not(Me.m_logFile Is Nothing) Then
+			Call Me.LogFile.Close
+			Set Me.LogFile = Nothing
+		End If
+		
+		If Not(Me.m_logConsole Is Nothing) Then
+			Call Me.LogConsole.Close
+			Set Me.LogConsole = Nothing
+		End If
+		
+		If Not(Me.m_logMsgBox Is Nothing) Then
+			Call Me.LogMsgBox.Close
+			Set Me.LogMsgBox = Nothing
+		End If
+		
+		Exit Sub
+		
+ErrHandler:
+		Error Err, Error & Chr$(13) & ERR_ONLINE & Erl & ERR_INMODULE & Getthreadinfo(1)
+	End Sub
+	
+	'LogEvent
+	'-------------------------------------------------------
+	Public Sub LogEvent(msg As String, msgLevel As Integer)
+		On Error Goto ErrHandler
+		
+		If msg = "" Then Exit Sub
+		If msgLevel < LOG_LEVEL_MINIMAL Or msgLevel > LOG_LEVEL_DEBUG Then Exit Sub
+		If msgLevel > Me.Level Then Exit Sub	'If this msg's logging level is greater than the global logging level don't log it
+		
+		'Write to log 
+		If Me.LogEventsToDoc Then
+			If Me.LogDocument Is Nothing Then Call Me.CreateDocument(LOG_TO_DOC)
+			Call Me.m_logDoc.Write(msg, LOG_TYPE_EVENT, msgLevel)
+		End If
+		
+		If Me.LogEventsToMail Then
+			If Me.LogMail Is Nothing Then Call Me.CreateDocument(LOG_TO_MAIL)
+			Call Me.m_logMail.Write(msg, LOG_TYPE_EVENT, msgLevel)
+		End If
+		
+		If Me.LogEventsToFile Then
+			If Me.LogFile Is Nothing Then Call Me.CreateDocument(LOG_TO_FILE)
+			Call Me.m_logFile.Write(msg, LOG_TYPE_EVENT, msgLevel)
+		End If
+		
+		If Me.LogEventsToConsole Then
+			If Me.LogConsole Is Nothing Then Call Me.CreateDocument(LOG_TO_CONSOLE)
+			Call Me.m_logConsole.Write(msg, LOG_TYPE_EVENT, msgLevel)
+		End If
+		
+		If Me.LogEventsToMsgbox Then
+			If Me.LogMsgBox Is Nothing Then Call Me.CreateDocument(LOG_TO_MSGBOX)
+			Call Me.m_logMsgBox.Write(msg, LOG_TYPE_EVENT, msgLevel)
+		End If
+		
+		Exit Sub
+		
+ErrHandler:
+		Error Err, Error & Chr$(13) & ERR_ONLINE & Erl & ERR_INMODULE & Getthreadinfo(1)
+		
+		
+	End Sub
+	
+	'LogError
+	'-------------------------------------------------------
+	Public Sub LogError(msg As String, code As Integer, ln As Integer, module As String)
+		On Error Goto ErrHandler
+		
+		If msg = "" Then Exit Sub
+		
+		'Build error message
+		If code <> 0 Then
+			Let msg = msg & " (" & code & ")"
+		End If
+		
+		If ln <> 0 Then
+			Let msg = msg & " " & ERR_ONLINE & " " & ln
+		End If
+		
+		If module <> "" Then
+			Let msg = msg & " " & ERR_INMODULE & " " & module
+		End If
+		
+		'Write to log
+		If Me.LogErrorsToDoc Then
+			If Me.m_logDoc Is Nothing Then Call Me.CreateDocument(LOG_TO_DOC)
+			Call Me.LogDocument.Write(msg, LOG_TYPE_ERROR, 0)
+			Let Me.LogDocument.ErrorCount = Me.LogDocument.ErrorCount + 1
+			Let Me.LogDocument.ViewIcon = Cint(LOG_DOC_ERROR_VIEW_ICON)
+		End If
+		
+		If Me.LogErrorsToMail Then
+			If Me.m_logMail Is Nothing Then Call Me.CreateDocument(LOG_TO_MAIL)
+			Call Me.LogMail.Write(msg, LOG_TYPE_ERROR, 0)
+			Let Me.LogMail.ErrorCount = Me.LogMail.ErrorCount + 1
+		End If
+		
+		If Me.LogErrorsToFile Then
+			If Me.m_logFile Is Nothing Then Call Me.CreateDocument(LOG_TO_FILE)
+			Call Me.LogFile.Write(msg, LOG_TYPE_ERROR, 0)
+			Let Me.LogFile.ErrorCount = Me.LogFile.ErrorCount + 1
+		End If
+		
+		If Me.LogErrorsToConsole Then
+			If Me.m_logConsole Is Nothing Then Call Me.CreateDocument(LOG_TO_CONSOLE)
+			Call Me.LogConsole.Write(msg, LOG_TYPE_ERROR, 0)
+			Let Me.LogConsole.ErrorCount = Me.LogConsole.ErrorCount + 1
+		End If
+		
+		If Me.LogErrorsToMsgbox Then
+			If Me.m_logMsgBox Is Nothing Then Call Me.CreateDocument(LOG_TO_MSGBOX)
+			Call Me.LogMsgBox.Write(msg, LOG_TYPE_ERROR, 0)
+			Let Me.LogMsgBox.ErrorCount = Me.LogMsgBox.ErrorCount + 1
+		End If
+		
+		Exit Sub
+		
+ErrHandler:
+		Error Err, Error & Chr$(13) & ERR_ONLINE & Erl & ERR_INMODULE & Getthreadinfo(1)
+	End Sub
+	
+'=======================================================
+'PRIVATE METHODS
+'=======================================================
+	
+	'CreateDocument
+	'-------------------------------------------------------
+	'Use this method to create a new log document.
+	'
+	'SYNTAX
+	'Call CreateDocument(type)
+	'
+	'PARAMETER
+	'type
+	'	Integer.  Designates the type of logging document that is being created.
+	'
+	'	LEGAL VALUES
+	'		LOG_TO_DOC (1)
+	'		LOG_TO_MAIL (2)
+	'		LOG_TO_FILE (3)
+	'		LOG_TO_CONSOLE (4)
+	'		LOG_TO_MSGBOX (5)
+	'	
+	'RETURN VALUE
+	'	Nothing.
+	'-------------------------------------------------------
+	Private Sub CreateDocument(docType As Integer)
+		On Error Goto ErrHandler
+		
+		Dim factory As New FlowDocumentFactory
+		Dim flowDocument As FlowDocument
+		Set flowDocument = factory.BuildDocument(docType, LogDatabase)
+		
+		Select Case docType
+		Case LOG_TO_DOC
+			Set Me.LogDocument = flowDocument
+			Let Me.LogDocument.ContinueText = Me.m_logDocContinueText		'************** Added in Beta 5 **************
+			Let Me.LogDocument.ViewIcon = Me.m_logDocViewIcon				'************** Added in Beta 5 **************
+			Let Me.LogDocument.CacheDepthAllowed = Me.m_cacheDepth			'************** Added in Beta 5 **************
+			
+		Case LOG_TO_MAIL
+			Set Me.LogMail = flowDocument
+			Let Me.LogMailRecipients = Me.m_logMailRecipients				'************** Added in Beta 5 **************
+			Let Me.LogMailSubject = Me.m_logMailSubject						'************** Added in Beta 5 **************
+			Let Me.LogMail.CacheDepthAllowed = Me.m_cacheDepth				'************** Added in Beta 5 **************
+			
+		Case LOG_TO_FILE
+			Set Me.LogFile = flowDocument
+			Let Me.LogFileName = Me.m_logFileName							'************** Added in Beta 5 **************
+			Let Me.LogFile.CacheDepthAllowed = Me.m_cacheDepth				'************** Added in Beta 5 **************
+			
+		Case LOG_TO_CONSOLE
+			Set Me.LogConsole = flowDocument
+			
+		Case LOG_TO_MSGBOX		
+			Set Me.LogMsgBox = flowDocument
+		End Select
+		
+		Exit Sub
+		
+ErrHandler:
+		Error Err, Error & Chr$(13) & ERR_ONLINE & Erl & ERR_INMODULE & Getthreadinfo(1)
+	End Sub	
+	
+'=======================================================
+'PUBILC PROPERTIES
+'=======================================================
+	
+	'Level
+	'-------------------------------------------------------
+	Public Property Set Level As Integer
+		On Error Goto ErrHandler
+		
+		Select Case Level
+		Case LOG_LEVEL_MINIMAL, LOG_LEVEL_NORMAL, LOG_LEVEL_VERBOSE, LOG_LEVEL_DEBUG
+			Let Me.m_logLevel = Level
+		Case Else
+			Let Me.m_logLevel = LOG_LEVEL_DEFAULT
+		End Select
+		
+		Exit Property
+		
+ErrHandler:
+		Error Err, Error & Chr$(13) & ERR_ONLINE & Erl & ERR_INMODULE & Getthreadinfo(1)
+	End Property
+	
+	Public Property Get Level As Integer
+		Let Level = Me.m_logLevel
+	End Property
+	
+	'LogDatabase
+	'-------------------------------------------------------
+	Public Property Set LogDatabase As NotesDatabase
+		Set Me.m_logDb = LogDatabase
+	End Property
+	
+	Public Property Get LogDatabase As NotesDatabase
+		Set LogDatabase = Me.m_logDb
+	End Property
+	
+	'LogDocument
+	'-------------------------------------------------------
+	Public Property Set LogDocument As FlowDocument
+		Set Me.m_logDoc = LogDocument
+	End Property
+	
+	Public Property Get LogDocument As FlowDocument
+		Set LogDocument = Me.m_logDoc
+	End Property
+	
+	'LogMail
+	'-------------------------------------------------------
+	Public Property Set LogMail As FlowDocument
+		Set Me.m_logMail = LogMail
+	End Property
+	
+	Public Property Get LogMail As FlowDocument
+		Set LogMail = Me.m_logMail
+	End Property
+	
+	'LogFile
+	'-------------------------------------------------------
+	Public Property Set LogFile As FlowDocument
+		Set Me.m_logFile = LogFile
+	End Property
+	
+	Public Property Get LogFile As FlowDocument
+		Set LogFile = Me.m_logFile
+	End Property
+	
+	'LogConsole
+	'-------------------------------------------------------
+	Public Property Set LogConsole As FlowDocument
+		Set Me.m_logConsole = LogConsole
+	End Property
+	
+	Public Property Get LogConsole As FlowDocument
+		Set LogConsole = Me.m_logConsole
+	End Property
+	
+	'LogMsgBox
+	'-------------------------------------------------------
+	Public Property Set LogMsgBox As FlowDocument
+		Set Me.m_logMsgBox = LogMsgBox
+	End Property
+	
+	Public Property Get LogMsgBox As FlowDocument
+		Set LogMsgBox = Me.m_logMsgBox
+	End Property
+	
+	'LogEventsToDoc
+	'-------------------------------------------------------
+	Public Property Set LogEventsToDoc As Boolean
+		On Error Goto ErrHandler
+		
+		If LogEventsToDoc And Not(Me.m_logEventsToDoc) Then						'If we want to begin logging events we need to create a log document...
+			If Me.m_logDoc Is Nothing Then Call Me.CreateDocument(LOG_TO_DOC)	'...unless the document already exists
+		End If
+		Let Me.m_logEventsToDoc = LogEventsToDoc
+		
+		Exit Property
+		
+ErrHandler:
+		Error Err, Error & Chr$(13) & ERR_ONLINE & Erl & ERR_INMODULE & Getthreadinfo(1)
+	End Property
+	
+	Public Property Get LogEventsToDoc As Boolean
+		Let LogEventsToDoc = Me.m_logEventsToDoc
+	End Property
+	
+	'LogErrorsToDoc
+	'-------------------------------------------------------
+	Public Property Set LogErrorsToDoc As Boolean
+		On Error Goto ErrHandler
+		
+		If LogErrorsToDoc And Not(Me.m_logErrorsToDoc) Then						'If we want to begin logging errors we need to create a log document...
+			If Me.m_logDoc Is Nothing Then Call Me.CreateDocument(LOG_TO_DOC)	'...unless the document already exists
+		End If
+		Let Me.m_logErrorsToDoc = LogErrorsToDoc
+		
+		Exit Property
+		
+ErrHandler:
+		Error Err, Error & Chr$(13) & ERR_ONLINE & Erl & ERR_INMODULE & Getthreadinfo(1)
+	End Property
+	
+	Public Property Get LogErrorsToDoc As Boolean
+		Let LogErrorsToDoc = Me.m_logErrorsToDoc
+	End Property
+	
+	'LogEventsToMail
+	'-------------------------------------------------------
+	Public Property Set LogEventsToMail As Boolean
+		On Error Goto ErrHandler
+		
+		If LogEventsToMail And Not(Me.m_logEventsToMail) Then					'If we want to begin logging events we need to create a mail document...
+			If Me.LogMail Is Nothing Then Call Me.CreateDocument(LOG_TO_MAIL)	'...unless the document already exists
+		End If
+		Let Me.m_logEventsToMail = LogEventsToMail
+		
+		Exit Property
+		
+ErrHandler:
+		Error Err, Error & Chr$(13) & ERR_ONLINE & Erl & ERR_INMODULE & Getthreadinfo(1)
+	End Property
+	
+	Public Property Get LogEventsToMail As Boolean
+		Let LogEventsToMail = Me.m_logEventsToMail
+	End Property
+	
+	'LogErrorsToMail
+	'-------------------------------------------------------
+	Public Property Set LogErrorsToMail As Boolean
+		On Error Goto ErrHandler
+		
+		If LogErrorsToMail And Not(Me.m_logErrorsToMail) Then					'If we want to begin logging errors we need to create a mail document...
+			If Me.m_logMail Is Nothing Then Call Me.CreateDocument(LOG_TO_MAIL)	'...unless the document already exists
+		End If
+		Let Me.m_logErrorsToMail = LogErrorsToMail
+		
+		Exit Property
+		
+ErrHandler:
+		Error Err, Error & Chr$(13) & ERR_ONLINE & Erl & ERR_INMODULE & Getthreadinfo(1)
+	End Property
+	
+	Public Property Get LogErrorsToMail As Boolean
+		Let LogErrorsToMail = Me.m_logErrorsToMail
+	End Property
+	
+	'LogEventsToFile
+	'-------------------------------------------------------
+	Public Property Set LogEventsToFile As Boolean
+		On Error Goto ErrHandler
+		
+		If LogEventsToFile And Not(Me.m_logEventsToFile) Then					'If we want to begin logging events we need to create a log document...
+			If Me.m_logFile Is Nothing Then Call Me.CreateDocument(LOG_TO_FILE)	'...unless the document already exists
+		End If
+		Let Me.m_logEventsToFile = LogEventsToFile
+		
+		Exit Property
+		
+ErrHandler:
+		Error Err, Error & Chr$(13) & ERR_ONLINE & Erl & ERR_INMODULE & Getthreadinfo(1)
+	End Property
+	
+	Public Property Get LogEventsToFile As Boolean
+		Let LogEventsToFile = Me.m_logEventsToFile
+	End Property
+	
+	'LogErrorsToFile
+	'-------------------------------------------------------
+	Public Property Set LogErrorsToFile As Boolean
+		On Error Goto ErrHandler
+		
+		If LogErrorsToFile And Not(Me.m_logErrorsToFile) Then					'If we want to begin logging errors we need to create a log document...
+			If Me.m_logFile Is Nothing Then Call Me.CreateDocument(LOG_TO_FILE)	'...unless the document already exists
+		End If
+		Let Me.m_logErrorsToFile = LogErrorsToFile
+		
+		Exit Property
+		
+ErrHandler:
+		Error Err, Error & Chr$(13) & ERR_ONLINE & Erl & ERR_INMODULE & Getthreadinfo(1)
+	End Property
+	
+	Public Property Get LogErrorsToFile As Boolean
+		Let LogErrorsToFile = Me.m_logErrorsToFile
+	End Property
+	
+	'LogEventsToConsole
+	'-------------------------------------------------------
+	Public Property Set LogEventsToConsole As Boolean
+		On Error Goto ErrHandler
+		
+		If LogEventsToConsole And Not(Me.m_logEventsToConsole) Then					'If we want to begin logging events we need to create a console document...
+			If Me.m_logConsole Is Nothing Then Call Me.CreateDocument(LOG_TO_CONSOLE)	'...unless the document already exists
+		End If
+		Let Me.m_logEventsToConsole = LogEventsToConsole
+		
+		Exit Property
+		
+ErrHandler:
+		Error Err, Error & Chr$(13) & ERR_ONLINE & Erl & ERR_INMODULE & Getthreadinfo(1)
+	End Property
+	
+	Public Property Get LogEventsToConsole As Boolean
+		Let LogEventsToConsole = Me.m_logEventsToConsole
+	End Property
+	
+	'LogErrorsToConsole
+	'-------------------------------------------------------
+	Public Property Set LogErrorsToConsole As Boolean
+		On Error Goto ErrHandler
+		
+		If LogErrorsToConsole And Not(Me.m_logErrorsToConsole) Then					'If we want to begin logging errors we need to create a console document...
+			If Me.m_logConsole Is Nothing Then Call Me.CreateDocument(LOG_TO_CONSOLE)	'...unless the document already exists
+		End If
+		Let Me.m_logErrorsToConsole = LogErrorsToConsole
+		
+		Exit Property
+		
+ErrHandler:
+		Error Err, Error & Chr$(13) & ERR_ONLINE & Erl & ERR_INMODULE & Getthreadinfo(1)
+	End Property
+	
+	Public Property Get LogErrorsToConsole As Boolean
+		Let LogErrorsToConsole = Me.m_logErrorsToConsole
+	End Property
+	
+	'LogEventsToMsgbox
+	'-------------------------------------------------------
+	Public Property Set LogEventsToMsgbox As Boolean
+		On Error Goto ErrHandler
+		
+		If LogEventsToMsgbox And Not(Me.m_logEventsToMsgbox) Then					'If we want to begin logging events but we need to create a msgbox document...
+			If Me.m_logMsgBox Is Nothing Then Call Me.CreateDocument(LOG_TO_MSGBOX)		'...unless the document already exists
+		End If
+		Let Me.m_logEventsToMsgbox = LogEventsToMsgbox
+		
+		Exit Property
+		
+ErrHandler:
+		Error Err, Error & Chr$(13) & ERR_ONLINE & Erl & ERR_INMODULE & Getthreadinfo(1)
+	End Property
+	
+	Public Property Get LogEventsToMsgbox As Boolean
+		Let LogEventsToMsgbox = Me.m_logEventsToMsgbox
+	End Property
+	
+	'LogErrorsToMsgbox
+	'-------------------------------------------------------
+	Public Property Set LogErrorsToMsgbox As Boolean
+		On Error Goto ErrHandler
+		If LogErrorsToMsgbox And Not(Me.m_logErrorsToMsgbox) Then					'If we want to begin logging errors we need to create a msgbox document...
+			If Me.m_logMsgBox Is Nothing Then Call Me.CreateDocument(LOG_TO_MSGBOX)		'...unless the document already exists
+		End If
+		Let Me.m_logErrorsToMsgbox = LogErrorsToMsgbox
+		
+		Exit Property
+		
+ErrHandler:
+		Error Err, Error & Chr$(13) & ERR_ONLINE & Erl & ERR_INMODULE & Getthreadinfo(1)
+	End Property
+	
+	Public Property Get LogErrorsToMsgbox As Boolean
+		Let LogErrorsToMsgbox = Me.m_logErrorsToMsgbox
+	End Property
+		
+	'LogMailRecipients											'************** Modified in Beta 5 **************
+	'-------------------------------------------------------
+	Public Property Set LogMailRecipients As String
+		On Error Goto ErrHandler
+		
+		Let Me.m_logMailRecipients = LogMailRecipients
+		If Not(Me.LogMail Is Nothing) Then Let Me.LogMail.SendTo = LogMailRecipients
+		
+		Exit Property
+		
+ErrHandler:
+		Error Err, Error & Chr$(13) & ERR_ONLINE & Erl & ERR_INMODULE & Getthreadinfo(1)
+	End Property
+	
+	Public Property Get LogMailRecipients As String
+		On Error GoTo ErrHandler
+		
+		If Not(Me.LogMail Is Nothing) Then Let Me.m_logMailRecipients = Me.LogMail.SendTo
+		Let LogMailRecipients = Me.m_logMailRecipients
+		
+		Exit Property
+		
+ErrHandler:
+		Error Err, Error & Chr$(13) & ERR_ONLINE & Erl & ERR_INMODULE & GetThreadInfo(1)
+	End Property
+	
+	'LogMailSubject												'************** Modified in Beta 5 **************
+	'-------------------------------------------------------
+	Public Property Set LogMailSubject As String
+		On Error Goto ErrHandler
+		
+		Let Me.m_logMailSubject = LogMailSubject
+		If Not(Me.LogMail Is Nothing) Then Let Me.LogMail.Subject = LogMailSubject
+		
+		Exit Property
+		
+ErrHandler:
+		Error Err, Error & Chr$(13) & ERR_ONLINE & Erl & ERR_INMODULE & Getthreadinfo(1)
+	End Property
+	
+	Public Property Get LogMailSubject As String
+		On Error GoTo ErrHandler
+		
+		If Not(Me.LogMail Is Nothing) Then Let Me.m_logMailSubject = Me.LogMail.Subject
+		Let LogMailSubject = Me.m_logMailSubject
+		
+		Exit Property
+		
+ErrHandler:
+		Error Err, Error & Chr$(13) & ERR_ONLINE & Erl & ERR_INMODULE & GetThreadInfo(1)
+	End Property
+	
+	'LogFileName												'************** Modified in Beta 5 **************
+	'-------------------------------------------------------
+	Public Property Set LogFileName As String
+		On Error Goto ErrHandler
+		
+		Let Me.m_logFileName = LogFileName
+		If Not(Me.LogFile Is Nothing) Then Let Me.LogFile.File = LogFileName
+		
+		Exit Property
+		
+ErrHandler:
+		Error Err, Error & Chr$(13) & ERR_ONLINE & Erl & ERR_INMODULE & Getthreadinfo(1)	
+	End Property
+	
+	Public Property Get LogFileName As String
+		On Error Goto ErrHandler
+		
+		If Not(Me.LogFile Is Nothing) Then Let Me.m_logFileName = Me.LogFile.File
+		Let LogFileName = Me.m_logFileName
+		
+		Exit Property
+		
+ErrHandler:
+		Error Err, Error & Chr$(13) & ERR_ONLINE & Erl & ERR_INMODULE & Getthreadinfo(1)
+	End Property	
+	
+	'ViewIcon													'************** Modified in Beta 5 **************
+	'-------------------------------------------------------
+	Public Property Set ViewIcon As Integer
+		On Error Goto ErrHandler
+		
+		Let Me.m_logDocViewIcon = ViewIcon
+		If Not(Me.LogDocument Is Nothing) Then Let Me.LogDocument.ViewIcon = ViewIcon
+		
+		Exit Property
+		
+ErrHandler:
+		Error Err, Error & Chr$(13) & ERR_ONLINE & Erl & ERR_INMODULE & Getthreadinfo(1)
+	End Property
+	
+	Public Property Get ViewIcon As Integer
+		On Error Goto ErrHandler
+		
+		If Not(Me.LogDocument Is Nothing) Then Let Me.m_logDocViewIcon = Me.LogDocument.ViewIcon
+		Let ViewIcon = Me.m_logDocViewIcon
+		
+		Exit Property
+		
+ErrHandler:
+		Error Err, Error & Chr$(13) & ERR_ONLINE & Erl & ERR_INMODULE & Getthreadinfo(1)
+	End Property
+	
+	'ContinueText												'************** Modified in Beta 5 **************
+	'-------------------------------------------------------
+	Public Property Set ContinueText As String
+		On Error Goto ErrHandler
+		
+		Let Me.m_logDocContinueText = ContinueText
+		If Not(Me.LogDocument Is Nothing) Then Let Me.LogDocument.ContinueText = ContinueText
+		
+		Exit Property
+		
+ErrHandler:
+		Error Err, Error & Chr$(13) & ERR_ONLINE & Erl & ERR_INMODULE & Getthreadinfo(1)
+	End Property
+	
+	'CacheDepth
+	'-------------------------------------------------------
+	Public Property Set CacheDepth As Integer
+		On Error Goto ErrHandler
+		
+		Let Me.m_cacheDepth = CacheDepth
+		If Not(Me.m_logDoc Is Nothing) Then Let Me.LogDocument.CacheDepthAllowed = CacheDepth
+		If Not(Me.m_logMail Is Nothing) Then Let Me.LogMail.CacheDepthAllowed = CacheDepth
+		If Not(Me.m_logFile Is Nothing) Then Let Me.LogFile.CacheDepthAllowed = CacheDepth
+		
+		Exit Property
+		
+ErrHandler:
+		Error Err, Error & Chr$(13) & ERR_ONLINE & Erl & ERR_INMODULE & Getthreadinfo(1)		
+	End Property
+	
+	Public Property Get CacheDepth As Integer
+		On Error Goto ErrHandler
+		
+		If Not(Me.m_logDoc Is Nothing) Then Let Me.m_cacheDepth = Me.LogDocument.CacheDepthAllowed
+		If Not(Me.m_logMail Is Nothing) Then Let Me.m_cacheDepth = Me.LogMail.CacheDepthAllowed
+		If Not(Me.m_logFile Is Nothing) Then Let Me.m_cacheDepth = Me.LogFile.CacheDepthAllowed
+		Let CacheDepth = Me.m_cacheDepth
+		
+		Exit Property
+		
+ErrHandler:
+		Error Err, Error & Chr$(13) & ERR_ONLINE & Erl & ERR_INMODULE & Getthreadinfo(1)		
+	End Property
+End Class
+'++LotusScript Development Environment:2:2:LogCleanup:1:8
+Sub LogCleanup(Byval retention As Integer, logger As FlowEngine)
+	On Error Goto ErrHandler
+	
+	'Declarations
+	'-------------------------------------------------------
+	Dim s As New NotesSession
+	Dim logDb As NotesDatabase
+	Dim logView As NotesView
+	Dim logDoc As NotesDocument
+	Dim logNextDoc As NotesDocument
+	Dim docDate As NotesDateTime
+	Dim cutoffDate As NotesDateTime
+	Dim purgeCount As Integer
+	Dim logEvents As Boolean
+	
+	'Instantiations
+	'-------------------------------------------------------
+	Set logDb = s.CurrentDatabase
+	If Not(logger Is Nothing) Then Let logEvents = True Else Let LogEvents = False
+	
+	If logEvents Then Call logger.LogEvent("Beginning log cleanup process", LOG_LEVEL_NORMAL)
+	
+	If retention = -1 Then
+		If logEvents Then Call logger.LogEvent("...log document purging is disabled", LOG_LEVEL_DEBUG)
+		If logEvents Then Call logger.LogEvent("...no log entries were purged", LOG_LEVEL_VERBOSE)		
+		Exit Sub
+	Else
+		Call logger.LogEvent("...purging old log entries from " & logDb.Server & "!!" & logDb.FileName, LOG_LEVEL_VERBOSE)
+	End If
+	
+	Set logView = logDb.GetView(LOG_BY_DATE_VIEW)
+	If logView Is Nothing Then
+		Call logger.LogError("...database " & logDb.Server & "!!" & logDb.FileName & " is missing the '" & LOG_BY_DATE_VIEW & "' view.", 0, 0, "")
+		Exit Sub
+	End If
+	
+	'Set retention cutoff
+	'-------------------------------------------------------
+	Set cutoffDate = New NotesDateTime("Today")
+	Call cutoffDate.SetNow
+	Call cutoffDate.AdjustDay(-retention)
+	
+	If logEvents Then
+		
+		If retention > 1 Then
+			Call logger.LogEvent("...log retention set to " & retention & " days", LOG_LEVEL_VERBOSE)
+		Else
+			Call logger.LogEvent("...log retention set to 1 day", LOG_LEVEL_VERBOSE)
+		End If
+		
+		Call logger.LogEvent("...log retention cutoff date is " & cutoffDate.DateOnly, LOG_LEVEL_DEBUG)
+		
+	End If
+	
+	'Log document loop
+	'=================
+	Set logDoc = logView.GetFirstDocument()
+	Do Until logDoc Is Nothing
+		If logEvents Then Call logger.LogEvent("...processing " & logDoc.UniversalID, LOG_LEVEL_DEBUG)
+		Set logNextDoc = logView.GetNextDocument(logDoc)
+		Set docDate = New NotesDateTime(logDoc.Created)
+		If logEvents Then Call logger.LogEvent("......document was created on " & docDate.LocalTime, LOG_LEVEL_DEBUG)
+		If docDate.TimeDifference(cutoffDate) <= 0 Then
+			'This document meets cutoff criteria
+			purgeCount = purgeCount + 1
+			Call logDoc.Remove(True)
+			Call logger.LogEvent("......document purged", LOG_LEVEL_VERBOSE)
+		End If
+		Set logDoc = logNextDoc
+	Loop
+	
+	'Wrap it up
+	'==========
+	If logEvents Then
+		If purgeCount = 1 Then
+			Call logger.LogEvent("...there was 1 log entry meeting the cutoff criteria", LOG_LEVEL_VERBOSE)
+		Else
+			Call logger.LogEvent("...there were " & purgeCount & " log entries meeting the cutoff criteria", LOG_LEVEL_VERBOSE)
+		End If	
+	End If
+	
+	Exit Sub
+	
+ErrHandler:
+	Error Err, Error & Chr$(13) & ERR_ONLINE & Erl & ERR_INMODULE & Getthreadinfo(1)
+End Sub
+
+
+
+

@@ -1,0 +1,222 @@
+'++LotusScript Development Environment:2:5:(Options):0:74
+Option Public
+Option Declare
+
+Use "PhotoImageResource"
+
+'++LotusScript Development Environment:2:5:(Forward):0:1
+Declare Class ImageResourceImporter
+
+'++LotusScript Development Environment:2:5:(Declarations):0:10
+
+%REM
+Called by agents to refresh the Lotus Notes Image Resouce design elements.  These appear only in Lotus Notes client views to show a thumbnail of the image.
+%END REM
+
+Class ImageResourceImporter
+	
+	Private session As NotesSession
+	Private db As NotesDatabase
+	Private dc As NotesDocumentCollection
+	
+	Private tempFolderPath As String
+	Private detachTransformerToDisk As Boolean
+	
+	
+	
+	'*********************************
+	'Method: New
+	'Params:
+	'	dc = A collection of documents that should be processed.
+	'	tempFolderPath = temporary directory for files
+	'Description:
+	'	Looks at each Thumbnail document in this database, detaches the JPG file to disk, and uses DXL to convert that JPG file to an Image Resource design element.
+	'	Lotus Notes can then display the Image Resource design element in Lotus Notes client views.
+	'*********************************
+	Public Sub New( dc As NotesDocumentCollection, tempFolderPath As String )
+		
+		Set session = New NotesSession
+		Set db = session.CurrentDatabase
+		Set Me.dc = dc
+		
+		Me.tempFolderPath = tempFolderPath
+		If( tempFolderPath="" ) Then
+			Me.tempFolderPath = "C:\"
+		End If
+		
+		Me.detachTransformerToDisk = True
+		
+	End Sub
+	
+	
+	
+	'*********************************
+	'Method: rebuild
+	'Description:
+	'	Processes each document in the collection.
+	'*********************************
+	Public Sub rebuild()
+		
+		On Error Goto ErrHandle
+		
+		'We use a For loop here, so it is easier to delete obsolete documents from the collection
+		Dim note As NotesDocument
+		Dim z As Integer
+		
+		For z = 1 To dc.Count
+			Set note = dc.GetNthDocument( z )
+			Call updateLotusNotesImageResource( note )
+		Next
+		
+		Exit Sub
+ErrHandle:
+		Print "Error (ImageResourceImporter - rebuild) " + Error
+		Exit Sub
+		
+	End Sub
+	
+	
+	
+	'*********************************
+	'Method: updateLotusNotesImageResource
+	'Description:
+	'	Removes any old Image Resource design elements, and creates new
+	'*********************************
+	Private Sub updateLotusNotesImageResource( note As NotesDocument )
+		
+		On Error Goto ErrHandle
+		
+		'Ignore deleted documents
+		If( note.IsDeleted ) Then
+			Exit Sub
+		End If
+		
+		Dim photoImageResource As PhotoImageResource
+		Dim unid As String
+		unid = Cstr( note.UniversalID )
+		
+		
+		'Generate a new Thumbnail Image Resource.
+		Set photoImageResource = New PhotoImageResource( detachTransformerToDisk, note, tempFolderPath )
+		Call photoImageResource.refresh()
+		Delete photoImageResource
+		
+		detachTransformerToDisk = False
+		
+		
+		Exit Sub
+ErrHandle:
+		Print "Error (ImageResourceImporter - updateLotusNotesImageResource) " + Error
+		Exit Sub
+		
+	End Sub
+	
+	
+	
+	'*********************************
+	'Method: purgeUnusedImageResources
+	'Description:
+	'	Scans all Image Preview files (image resources), and deletes any obsolete image resources.
+	'*********************************
+	Public Sub purgeUnusedImageResources()
+		
+		On Error Goto ErrHandle
+		
+		'Find the Image Resource for this Photo, and remove it.
+		Dim nc As NotesNoteCollection
+		Set nc = db.CreateNoteCollection(False)
+		nc.SelectImageResources = True
+		Call nc.BuildCollection
+		
+		Dim nid As String
+		Dim nextid As String
+		Dim i As Integer
+		Dim note As NotesDocument
+		Dim imageResourceName As String
+		
+		nid = nc.GetFirstNoteId
+		For i = 1 To nc.Count
+			nextid = nc.GetNextNoteId( nid )
+			Set note = db.GetDocumentByID( nid )
+			imageResourceName = note.GetItemValue( "$TITLE" )(0)
+			
+			'Does the Photo document exist?
+			If( isPreviewImageObsolete(imageResourceName) ) Then
+				Print "removing obsolete " + imageResourceName
+				Call note.Remove( False )
+			End If
+			
+			
+			nid = nextid
+		Next
+		
+		
+		Exit Sub
+ErrHandle:
+		Print "Error (ImageResourceImporter - purgeUnusedImageResources) " + Error
+		Exit Sub
+		
+	End Sub
+	
+	
+	
+	'*********************************
+	'Method: isPreviewImageObsolete
+	'Params:
+	'	imageResourceName = The complete name of the Image Resource.
+	'	The first characters of the name are: $TN_
+	'	The last characters of the name are: .JPG
+	'	The middle characters of the name are from the Photo document's UNID
+	'Description:
+	'	Scans all Image Preview files (image resources), and deletes any obsolete image resources.
+	'*********************************
+	Private Function isPreviewImageObsolete( imageResourceName As String ) As Boolean
+		
+		On Error Goto ErrHandle
+		
+		'Is this an Image Preview file?  They are in the format $TN_unid.JPG
+		If Not( Left(imageResourceName,4) = "$TN_" ) Then
+			Exit Function
+		End If
+		If Not( Right(imageResourceName,4) = ".JPG" ) Then
+			Exit Function
+		End If
+		
+		'Determine the UNID of the Photo document.
+		Dim photoUNID As String
+		photoUNID = Strleft( imageResourceName, ".JPG" )
+		photoUNID = Strright( photoUNID, "$TN_" )
+		
+		'Try to find the Photo document.  This will throw an error if the document is not found.
+		Dim photoDocument As NotesDocument
+		Set photoDocument = getPhotoDocument( photoUNID )
+		If( photoDocument Is Nothing ) Then
+			isPreviewImageObsolete = True
+		End If
+		
+		
+		Exit Function
+ErrHandle:
+		Print "Error (ImageResourceImporter - isPreviewImageObsolete, imageResourceName=" + imageResourceName + " photoUNID=" + photoUNID + ") " + Error
+		Exit Function
+		
+	End Function
+	
+	
+	'*********************************
+	'Method: getPhotoDocument
+	'Params:
+	'	unid = The unid of a document.
+	'Description:
+	'	The method GetDocumentByUNID is unpredictable, so let's trap it.
+	'*********************************
+	Private Function getPhotoDocument( unid As String ) As NotesDocument
+		On Error Goto ErrHandle
+		Set getPhotoDocument = db.GetDocumentByUNID( unid )
+ErrHandle:
+		Exit Function
+	End Function
+	
+	
+	
+End Class

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?><note class="form" maintenanceversion="3.0" replicaid="8025798A0032A61C" version="8.5" xmlns="http://www.lotus.com/dxl">
+<noteinfo noteid="186" sequence="1" unid="CDB76259940BD768802577FA0056166F">
+<created><datetime>20101215T154018,39+00</datetime></created>
+<modified><datetime>20120119T091319,07+00</datetime></modified>
+<revised><datetime>20101215T154018,46+00</datetime></revised>
+<lastaccessed><datetime>20120119T091319,07+00</datetime></lastaccessed>
+<addedtofile><datetime>20120119T091319,07+00</datetime></addedtofile></noteinfo>
+<updatedby><name>CN=Lotus Notes Template Development/O=Lotus Notes</name><name>CN=Phil Warner/OU=Systems/O=TFI</name><name>CN=Mark Barton/OU=Systems/O=TFI</name></updatedby>
+<wassignedby><name>CN=Phil Warner/OU=Systems/O=TFI</name></wassignedby>
+<item name="$ImagesWide" sign="true"><number>1</number></item>
+<item name="$ImagesHigh" sign="true"><number>1</number></item>
+<item name="$ImagesColorize" sign="true"><number>0</number></item>
+
+<item name="$ImageNames" sign="true"><text>save.GIF</text></item>
+<item name="$PublicAccess" sign="true"><text>1</text></item>
+<item name="$TITLE" sign="true"><text>btnSave.gif</text></item>
+<item name="$DesignerVersion" sign="true"><text>6</text></item>
+<item name="$LANGUAGE" sign="true"><text>en</text></item>
+<item name="$Flags"><text>34Ci</text></item></note>

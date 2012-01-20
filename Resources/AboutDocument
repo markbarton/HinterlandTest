@@ -1,0 +1,38 @@
+<?xml version='1.0' encoding='utf-8'?>
+<!DOCTYPE note SYSTEM 'xmlschemas/domino_8_5_3.dtd'>
+<note default='true' class='helpaboutdocument' xmlns='http://www.lotus.com/dxl'
+ version='8.5' maintenanceversion='3.0' replicaid='8025798A0032A61C'>
+<noteinfo noteid='12a' unid='1C69BBEB197EB5BF802578CD004B793F' sequence='2'>
+<created><datetime dst='true'>20110714T144422,39+01</datetime></created>
+<modified><datetime>20120119T091315,13+00</datetime></modified>
+<revised><datetime>20120118T111036,62+00</datetime></revised>
+<lastaccessed><datetime>20120119T091315,13+00</datetime></lastaccessed>
+<addedtofile><datetime>20120119T091315,13+00</datetime></addedtofile></noteinfo>
+<updatedby><name>CN=Shiny Design/OU=Systems/O=TFI</name></updatedby>
+<wassignedby><name>CN=Shiny Design/OU=Systems/O=TFI</name></wassignedby>
+<item name='$HTMLCode' sign='true'>
+<rawitemdata type='1'>
+</rawitemdata></item>
+<item name='$Info' sign='true'>
+<rawitemdata type='1'>
+hhgBAIAAAAAAgAAAAQABAP///wAQAAAA
+</rawitemdata></item>
+<item name='$Flags'><text/></item>
+<item name='$DesignerVersion'><text>8.5.3</text></item>
+<item name='$Fonts'>
+<rawitemdata type='1'>
+i/8oAAEABSZWZXJkYW5hAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==
+</rawitemdata></item>
+<item name='$Body' sign='true'>
+<rawitemdata type='1'>
+gQKC/1oAAQAAAAAAAAAAAKAFAACgBQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAABAAAAAJSHAAAAAAAAAAAAAAAAAQAAAAQAAACDBAEAhf8rAAUFAApIaW50ZXJsYW5k
+IEF2aWF0aW9uIENvbnRlbnQgTWFuYWdlcgCBAoMEAQCF/wgABQAACoECgwQBAIX/EAAFAQAKT3Zl
+cnZpZXeBAoMEAQCF/wgABQAACoECgwQBAIX/ewAFAAAKVGhpcyBhcHBsaWNhdGlvbiBpcyB1c2Vk
+IHRvIGVkaXQgdGhlIGNvbnRlbnQgb24gdGhlIEhpbnRlcmxhbmQgQXZpYXRpb24gU2l0ZS4gaHR0
+cDovL3d3dy5oaW50ZXJsYW5kYXZpYXRpb24uY29tLmF1LwCBAoMEAQCF/wgABQAACoECgwQBAIX/
+DAAFAQAKSGVscIECgwQBAIX/CAAFAAAKgQKDBAEAhf9oAAUAAApGdXJ0aGVyIGhlbHAgb24gdXNp
+bmcgdGhpcyBhcHBsaWNhdGlvbiBpcyBhdmFpbGFibGUgdW5kZXIgdGhlIEhlbHAgTWVudSAvIFVz
+aW5nIFRoaXMgQXBwbGljYXRpb26BAoMEAQCF/wgABQAACg==
+</rawitemdata></item></note>
+

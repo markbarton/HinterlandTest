@@ -1,0 +1,136 @@
+'++LotusScript Development Environment:2:5:(Options):0:74
+%REM
+	Copyright 2008 - 2009 Conxsys 
+	Licensed under the Apache License, Version 2.0 (the "License"); 
+	you may not use this file except in compliance with the License. 
+	You may obtain a copy of the License at
+	
+	http://www.apache.org/licenses/LICENSE-2.0 
+	
+	Unless required by applicable law or agreed to in writing, software 
+	distributed under the License is distributed on an "AS IS" BASIS, 
+	WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
+	See the License for the specific language governing permissions and 
+	limitations under the License
+%ENDREM
+
+Option Public
+Option Declare
+
+Use "Flow Localization"
+
+'++LotusScript Development Environment:2:5:(Forward):0:1
+Declare Function GetTime As String
+Declare Function GetDate As String
+
+'++LotusScript Development Environment:2:5:(Declarations):0:10
+'************************************************************
+'FLOW CONSTANTS
+'************************************************************
+'Version
+Public Const LOG_NAME = "Flow"
+Public Const LOG_MAJOR_VER = "1"
+Public Const LOG_MINOR_VER = "0 Beta 5"
+
+'Log Type
+Public Const LOG_TYPE_EVENT = 0
+Public Const LOG_TYPE_ERROR = 1
+Public Const LOG_TYPE_TIME = 9
+
+'Log Level
+Public Const LOG_LEVEL_MINIMAL = 1
+Public Const LOG_LEVEL_NORMAL = 2
+Public Const LOG_LEVEL_VERBOSE = 3
+Public Const LOG_LEVEL_DEBUG = 4
+Public Const LOG_LEVEL_DEFAULT = LOG_LEVEL_NORMAL
+
+'Log Location
+Public Const LOG_TO_DOC = 1
+Public Const LOG_TO_MAIL = 2
+Public Const LOG_TO_FILE = 3
+Public Const LOG_TO_CONSOLE = 4
+Public Const LOG_TO_MSGBOX = 5
+
+'Log Defaults
+Public Const LOG_FORM_TYPE = "Log"
+Public Const LOG_BODY_FIELD = "Body"
+Public Const LOG_MAIL_FORM_TYPE = "Memo"
+Public Const LOG_DOC_MAX_SIZE = 50000
+Public Const LOG_TIME_SPACER = "    "
+Public Const LOG_BY_DATE_VIEW = "($LogByDate)"
+Public Const LOG_LEGEND_FIELD = "Legend"
+Public Const LOG_VIEWICON_FIELD = "ViewIcon"
+Public Const LOG_VIEWICON_DEFAULT = -1
+
+'Mail Message
+Public Const LOGMSG_SENDTO_FIELD = "SendTo"
+Public Const LOGMSG_COPYTO_FIELD = "CopyTo"
+Public Const LOGMSG_BLINDCOPYTO_FIELD = "BlindCopyTo"
+Public Const LOGMSG_SUBJECT_FIELD = "Subject"
+Public Const LOGMSG_IMPORTANCE_FIELD = "Importance"
+
+'Log Messagebox
+Public Const MSGBOX_ICON_NONE = 0
+Public Const MSGBOX_ICON_STOP = 16
+Public Const MSGBOX_ICON_QUESTION = 32
+Public Const MSGBOX_ICON_EXCLAMATION = 48
+Public Const MSGBOX_ICON_INFORMATION = 64
+Public Const MSGBOX_BUTTON_OK = 0
+Public Const MSGBOX_BUTTON_OKCANCEL = 1
+Public Const MSGBOX_BUTTON_ABORTRETRYIGNORE = 2
+Public Const MSGBOX_BUTTON_YESNOCANCEL = 3
+Public Const MSGBOX_BUTTON_YESNO = 4
+Public Const MSGBOX_BUTTON_RETRYCANCEL = 5
+Public Const MSGBOX_APP_MODAL = 0
+Public Const MSGBOX_SYS_MODAL = 4096
+Public Const MSGBOX_DEF_BUTTON_1 = 0
+Public Const MSGBOX_DEF_BUTTON_2 = 256
+Public Const MSGBOX_DEF_BUTTON_3 = 512
+
+'Log File
+Public Const FILE_NAME = "flow.log"
+
+'Log Engine
+Public Const LOG_DOC_ERROR_VIEW_ICON = 181
+
+'************************************************************
+'ERROR CODES
+'************************************************************
+Public Const LOG_SESS_NOT_INSTANTIATED_ERR = 1750
+Public Const LOG_SESS_NOT_INSTANTIATED_ERROR = "Flow: Log session not instantiated"
+Public Const LOG_DB_NOT_INSTANTIATED_ERR = 1751
+Public Const LOG_DB_NOT_INSTANTIATED_ERROR = "Flow: Log database not instantiated"
+Public Const LOG_DOC_DOES_NOT_EXIST_ERR = 1752
+Public Const LOG_DOC_DOES_NOT_EXIST_ERROR = "Flow: Log document object does not exist"
+Public Const LOG_PARAM_CANNOT_BE_EMPTY_ERR = 1753
+Public Const LOG_PARAM_CANNOT_BE_EMPTY_ERROR = "Flow: The required parameter cannot be empty or blank"
+Public Const LOG_UNKNOWN_ERR = 1799
+Public Const LOG_UNKNOWN_ERROR = "Flow: Unexpected error"
+
+'++LotusScript Development Environment:2:1:GetTime:1:8
+Function GetTime As String
+	On Error Goto ErrHandler
+	
+	Dim dt As New NotesDateTime(Today)
+	Call dt.SetNow
+	GetTime = dt.TimeOnly
+	
+	Exit Function
+	
+ErrHandler:
+	Error Err, Error & Chr$(13) & ERR_ONLINE & Erl & ERR_INMODULE & Getthreadinfo(1)
+End Function
+
+'++LotusScript Development Environment:2:1:GetDate:1:8
+Function GetDate As String
+	On Error Goto ErrHandler
+	
+	Dim dt As New NotesDateTime(Today)
+	Call dt.SetNow
+	GetDate = dt.DateOnly
+	
+	Exit Function
+	
+ErrHandler:
+	Error Err, Error & Chr$(13) & ERR_ONLINE & Erl & ERR_INMODULE & Getthreadinfo(1)
+End Function

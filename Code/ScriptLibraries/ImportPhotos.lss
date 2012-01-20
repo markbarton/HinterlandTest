@@ -1,0 +1,59 @@
+'++LotusScript Development Environment:2:5:(Options):0:74
+%REM
+	Library ImportPhotos
+	Created Dec 29, 2010 by Mark Barton/Systems/TFI
+	Description: Comments for Library
+%END REM
+Option Public
+Option Declare
+
+
+'++LotusScript Development Environment:2:5:(Forward):0:1
+Declare 	Private Function promptForFilenames() As Boolean
+
+'++LotusScript Development Environment:2:5:(Declarations):0:10
+
+'++LotusScript Development Environment:2:1:promptForFilenames:6:8
+'*********************************
+	'Method: promptForFilenames
+	'Description:
+	'	Displays a dialog box.  The user will select one or more JPG files from their computer.
+	'*********************************
+	Private Function promptForFilenames() As Boolean
+		
+		'Dialog box.  Only select JPG file types.
+		Dim workspace As New NotesUIWorkspace
+		Dim s As New NotesSession
+		Dim db As NotesDatabase
+		Set db=s.currentdatabase
+		Dim doc As notesdocument
+		Dim filenames As Variant
+		filenames = workspace.OpenFileDialog( True, "Import photos to this album", "JPG IMAGES ONLY|*.jpg", "", "" )
+		If( IsEmpty(filenames) ) Then
+			Exit Function
+		End If
+	
+		'//Get directory path
+		Dim directory As String
+		directory = StrLeftBack( filenames(0), "\" )
+		'//Loop through filenames and create image documents with photos attached as thumbnails
+		
+		ForAll items In filenames
+			
+			'//Rename file first
+			'Name items As 
+			
+			Set doc=New NotesDocument(db)
+			doc.form="Image"
+			Dim body As NotesRichTextItem
+			Set body = New NotesRichTextItem( doc, "Body" )
+			
+			Dim object As NotesEmbeddedObject
+			Set object = body.EmbedObject( EMBED_ATTACHMENT, "", items )
+			
+		End ForAll
+		
+		'The user selected at least one file.  Return True.
+		promptForFilenames = True
+		
+	End Function

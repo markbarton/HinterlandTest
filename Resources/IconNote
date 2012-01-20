@@ -1,0 +1,37 @@
+<?xml version='1.0' encoding='utf-8'?>
+<!DOCTYPE note SYSTEM 'xmlschemas/domino_8_5_3.dtd'>
+<note default='true' class='icon' xmlns='http://www.lotus.com/dxl' version='8.5'
+ maintenanceversion='3.0' replicaid='8025798A0032A61C'>
+<noteinfo noteid='11a' unid='724C0B8F954D05A3802577F800503BA2' sequence='7'>
+<created><datetime>20101213T143621,46+00</datetime></created>
+<modified><datetime>20120119T091338,73+00</datetime></modified>
+<revised><datetime>20120119T091338,72+00</datetime></revised>
+<lastaccessed><datetime>20120119T091338,73+00</datetime></lastaccessed>
+<addedtofile><datetime>20120119T091314,70+00</datetime></addedtofile></noteinfo>
+<updatedby><name>CN=Mark Barton/OU=Systems/O=TFI</name><name>CN=Clifton Reid/OU=Systems/O=TFI</name><name
+>CN=Shiny Design/OU=Systems/O=TFI</name></updatedby>
+<wassignedby><name>CN=Mark Barton/OU=Systems/O=TFI</name></wassignedby>
+<item name='IconBitmap' summary='true'>
+<rawitemdata type='6'>
+AiAgAQAA///////wD///gAH//gAAf/wAAD/4AAAf8AAAD+AAAAfgAAAHwAAAA8AAAAPAAAADgAAA
+AYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAHAAAADwAAAA8AAAAPgAAAH4AAAB/AAAA/4AAAf
+/AAAP/4AAH//gAH///AP//////8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAiIiIiAAAAAAAAAAAAAAI
+jPZmZm/IgAAAAAAAAAAIjGZmZmZmZsiAAAAAAAAAjGZmZmZmZmZmyAAAAAAACMZmZmZmZmZmZmyA
+AAAAAIxmZmZmZmZmZmZmyAAAAAjGZmZmZmZmZmZmZmyAAAAIZmbyL2byL2byL2ZmgAAAjGZmIiJm
+IiJmIiJmZsgAAIZmZiIiZiIiZiIiZmZoAADGZmYiImYiImYiImZmbAAI9mZmIiJmIiJmIiJmZm+A
+CGZmZiIiZiIiZiIiZmZmgAhmZmYiImYiImYiImZmZoAIZmZmIiJmIiJmIiJmZmaACGZvIiIiZiIi
+ZiIiIvZmgAhmYiIiImYiImYiIiImZoAIZm8iIi9m8i9m8iIi9maACPZmZmZmZmZmZmZmZmZvgADG
+ZmbyL2byL2byL2ZmbAAAj2ZmIiJmIiJmIiJmZvgAAIxmZiIiZiIiZiIiZmbIAAAI9mbyL2byL2by
+L2ZvgAAACMZmZmZmZmZmZmZmbIAAAACMZmZmZmZmZmZmZsgAAAAACMZmZmZmZmZmZmyAAAAAAACM
+9mZmZmZmZm/IAAAAAAAACIz2ZmZmZm/IgAAAAAAAAAAIiMZmZmyIgAAAAAAAAAAAAACIiIiIAAAA
+AAAAUEECICABAAD/////+A4DgA==
+</rawitemdata></item>
+<item name='$TemplateServerName'><text>CN=Mark Barton/OU=Systems/O=TFI</text></item>
+<item name='$TemplateFileName'><text>C:\Program Files\lotus\notes7\data\Bloomfield.ntf</text></item>
+<item name='$TemplateModTime'><datetime>20110325T172815,97+00</datetime></item>
+<item name='$Flags'><text>J7F</text></item>
+<item name='$FlagsNoRefresh'><text/></item>
+<item name='$DefaultFrameset'><text>Launch</text></item>
+<item name='$Daos'><text>0</text></item>
+<item name='$TITLE'><text>Hinterland Aviation v2</text></item></note>
+

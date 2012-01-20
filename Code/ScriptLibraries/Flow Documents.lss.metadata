@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?><note class="filter" maintenanceversion="3.0" replicaid="8025798A0032A61C" version="8.5" xmlns="http://www.lotus.com/dxl">
+<noteinfo noteid="22e" sequence="2" unid="7F98AB3B52A11309802577FA00560B03">
+<created><datetime>20101215T153949,15+00</datetime></created>
+<modified><datetime>20120119T091331,81+00</datetime></modified>
+<revised><datetime dst="true">20110614T135349,23+01</datetime></revised>
+<lastaccessed><datetime>20120119T091331,81+00</datetime></lastaccessed>
+<addedtofile><datetime>20120119T091331,81+00</datetime></addedtofile></noteinfo>
+<updatedby><name>CN=Shiny Design/OU=Systems/O=TFI</name></updatedby>
+<wassignedby><name>CN=Shiny Design/OU=Systems/O=TFI</name></wassignedby>
+<item name="$DesignerVersion" sign="true"><text>8</text></item>
+<item name="$TITLE" sign="true"><text>Flow Documents</text></item>
+<item name="$Flags"><text>s34Q</text></item>
+<item name="$PublicAccess" sign="true"><text>1</text></item>
+
+</note>

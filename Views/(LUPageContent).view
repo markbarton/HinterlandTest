@@ -1,0 +1,48 @@
+<?xml version='1.0' encoding='utf-8'?>
+<!DOCTYPE note SYSTEM 'xmlschemas/domino_8_5_3.dtd'>
+<note class='view' xmlns='http://www.lotus.com/dxl' version='8.5' maintenanceversion='3.0'
+ replicaid='8025798A0032A61C'>
+<noteinfo noteid='19a' unid='6668263F403AF5248025780F0037986C' sequence='4'>
+<created><datetime>20110105T100715,00+00</datetime></created>
+<modified><datetime>20120119T091320,00+00</datetime></modified>
+<revised><datetime dst='true'>20110614T135340,25+01</datetime></revised>
+<lastaccessed><datetime>20120119T091320,00+00</datetime></lastaccessed>
+<addedtofile><datetime>20120119T091320,00+00</datetime></addedtofile></noteinfo>
+<updatedby><name>CN=Shiny Design/OU=Systems/O=TFI</name></updatedby>
+<wassignedby><name>CN=Shiny Design/OU=Systems/O=TFI</name></wassignedby>
+<item name='$FormatNote' summary='true'>
+<rawitemdata type='4'>
+AQCM6y2dXAyuESaqRwD7dyWA
+</rawitemdata></item>
+<item name='$FormulaClass' sign='true'><text>1</text></item>
+<item name='$TITLE' sign='true'><text>(LUPageContent)</text></item>
+<item name='$Index' sign='true'><text/></item>
+<item name='$Formula' summary='true' sign='true'><formula compiled='true'>
+RAAFABQADwABAAkAJENvbmZsaWN0AAQABAAAACAABQAEAGZvcm0BAAsAQ29udGVudFBhZ2UACgID
+AAcACgAEAAlMMVM=
+</formula></item>
+<item name='$Collation' summary='true'>
+<rawitemdata type='2'>
+BgAAAABE
+</rawitemdata></item>
+<item name='$ViewFormat' summary='true' sign='true'>
+<rawitemdata type='5'>
+AQABAAYAi3wAAFZDAAACAAAACgAKAFAAAQAACgAAAAAAAAAAAAICAAAAJDUKAAAACACSAAMAAQUB
+AAQAf0Ew/yYAAQAAAAEBAAkBAAAKAQEKCgAALwCtKwMBAQABAAAAAAAAAAAAV0MBAQAJAAAAAAAA
+AAAAAAAAAAAAAAAABAAAAAAA//8AAAAAAAAAAAAAAAAAAEIAhAAAAAEA////AAEA8/f+AAEA0tLS
+AAAAAAAAAAAAAQD///8AAQDA4f8AAwABAAAAAAABAAAAgAABAAAAAAAAAAgAAAAAAAEA
+</rawitemdata></item>
+<item name='$Fonts' sign='true'><textlist/></item>
+<item name='$Comment' sign='true'><text/></item>
+<item name='$Flags'><text>PY</text></item>
+<item name='$DesignerVersion'><text>8.5.2</text></item>
+<item name='$V5ACTIONS' sign='true'>
+<rawitemdata type='1'>
+i/8oAAEABSZWZXJkYW5hAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAL0cKAAAAAEAAQAAABEAAAAA
+AAAABQAACAgAAgB5/2wAAQDA4f8AAQAAAAAAAQAAAAAAAQDA4f8AAAAfAAAAAAAAAAAAAwAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAD2/zQAAAAAAAMAEwASAAAAAAAAAAAAAAAAAAAAAAAAAAAAbm90ZXMvYnV0dG9uYmcuZ2lm
+/P86AAAAAAABAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAA
+AA==
+</rawitemdata></item></note>
+

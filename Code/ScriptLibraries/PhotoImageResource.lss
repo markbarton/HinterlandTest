@@ -1,0 +1,352 @@
+'++LotusScript Development Environment:2:5:(Options):0:74
+Option Public
+Option Declare
+
+Use "ImageResourceXSL"
+
+'++LotusScript Development Environment:2:5:(Forward):0:1
+Declare Class PhotoImageResource
+
+'++LotusScript Development Environment:2:5:(Declarations):0:10
+
+%REM
+Lotus Notes clients can display Image Resource design elements in Lotus Notes client views.
+This class will export the Thumbnail document as DXL, transform that DXL to an Image Resource DXL file, and then import the new Image Resource design element.
+The Lotus Notes client can then display the Image Resource in views.
+Lotus Notes users may need to exit and reopen the database to see any changes.
+%END REM
+
+
+Class PhotoImageResource
+	
+	Private session As NotesSession
+	Private db As NotesDatabase
+	
+	Private thumbnailDocument As NotesDocument
+	Private tempFolderPath As String
+	
+	Private thumbnail_dxl_photo_document_filename As String
+	Private thumbnail_dxl_photo_image_filename As String
+	
+	Private thumbnail_dxl_domino_dtd As String
+	Private thumbnail_dxl_transform_xsl_filename As String
+	
+	
+	
+	'*********************************
+	'Method: New
+	'Params:
+	'	detachTransformer = When true, the transform.xsl and DTD files will be saved the user/server temporary directory.
+	'	thumbnailDocument = The Thumbnail document in the database.  The file on this document will be converted to an Image Resouce design element.
+	'	tempFolderPath = The temporary directory for the user/server.
+	'Description:
+	'	Converts a thumbnail image to a Lotus Notes Image Resource design element.
+	'*********************************
+	Public Sub New( detachTransformer As Boolean, thumbnailDocument As NotesDocument, tempFolderPath As String )
+		
+		Set session = New NotesSession
+		Set db = session.CurrentDatabase
+		
+		Set Me.thumbnailDocument = thumbnailDocument
+		Me.tempFolderPath = tempFolderPath
+		
+		If( tempFolderPath="" ) Then
+			Me.tempFolderPath = "C:\"
+		End If
+		
+		thumbnail_dxl_photo_document_filename = "photodocument_" + Cstr(db.ReplicaID) + ".dxl"
+		thumbnail_dxl_photo_image_filename = "image_" + Cstr(db.ReplicaID) + ".dxl"
+		
+		thumbnail_dxl_transform_xsl_filename = "transform_" + Cstr(db.ReplicaID) + ".xsl"
+		thumbnail_dxl_domino_dtd = "domino_7_0_2_" + Cstr(db.ReplicaID) + ".dtd"
+		
+		
+		If( detachTransformer ) Then
+			Call DetachTransformerToDisk()
+		End If
+		
+	End Sub
+	
+	
+	
+	'*********************************
+	'Method: refresh
+	'Description:
+	'	Removes any existing Image Resource design element, and creates new.
+	'*********************************
+	Public Function refresh()
+		
+		'The user/agent calling this action must have Designer/Manager access to this database.
+		If( db.QueryAccess(session.UserName) < 5 ) Then
+			Exit Function
+		End If
+		
+		'Remove the existing Image Resource from the database.
+		'NOTE: The DXL Import function should replace an existing Image Resource, but it sometimes will fail.  Let's remove it manually.
+		'Call clearImageResource( getImageResourceName(Cstr(thumbnailDocument.ParentDocumentUNID)) )
+		
+		'Export the Thumbnail document as DXL, transform it to an Image Resource DXL, and them import it as a new Image Resource.
+		If Not( exportDocumentAsDXL() ) Then Exit Function
+		If Not( transformDXLAsImageResource() ) Then Exit Function
+		If Not( importDXLAsImageResource() ) Then Exit Function
+		
+	End Function
+	
+	
+	
+	'*********************************
+	'Method: getImageResourceName
+	'Params:
+	'	unid = Universal ID of the Photo document.
+	'Description:
+	'	Returns the new name of the Image Resource design element, based on the Photo document's Universal ID.
+	'*********************************
+	Public Function getImageResourceName( unid As String ) As String
+		getImageResourceName = "$TN_" + unid + ".JPG"
+	End Function
+	
+	
+	
+	'*********************************
+	'Method: exportDocumentAsDXL
+	'Description:
+	'	Exports the Thumbnail document as DXL to the user/server temporary directory.
+	'*********************************
+	Private Function exportDocumentAsDXL() As Boolean
+		
+		On Error Goto ErrHandle
+		
+		Sleep(1)
+		
+		Dim stream As NotesStream
+		Set stream = session.CreateStream
+		
+		Dim filename As String
+		filename = tempFolderPath + thumbnail_dxl_photo_document_filename
+		
+		Print "1) exporting thumbnail image to: " + filename
+		
+		
+		If Not stream.Open( filename ) Then
+			Exit Function
+		End If
+		Call stream.Truncate
+		
+		Dim exporter As NotesDXLExporter
+		Set exporter = session.CreateDXLExporter
+		Call exporter.SetInput( thumbnailDocument )
+		Call exporter.SetOutput( stream )
+		exporter.ForceNoteFormat = False
+		
+		Call exporter.Process
+		
+		exportDocumentAsDXL = True
+		Delete exporter
+		
+		
+		Exit Function
+ErrHandle:
+		Print "Error (PhotoImageResource - exportDocumentAsDXL) " + Error
+		Exit Function
+		
+	End Function
+	
+	
+	
+	'*********************************
+	'Method: transformDXLAsImageResource
+	'Description:
+	'	Transforms the Thumbnail DXL file to a new DXL document of an Image Resource.
+	'*********************************
+	Private Function transformDXLAsImageResource() As Boolean
+		
+		On Error Goto ErrHandle
+		
+		Sleep(1)
+		
+		Dim sourceFilePath As String
+		sourceFilePath = tempFolderPath + thumbnail_dxl_photo_document_filename
+		
+		Dim transformerFilePath As String
+		transformerFilePath = tempFolderPath + thumbnail_dxl_transform_xsl_filename
+		
+		Dim outFilePath As String
+		outFilePath = tempFolderPath + thumbnail_dxl_photo_image_filename
+		
+		Print "2) sourceFilePath: " + sourceFilePath
+		Print "2) transformerFilePath=" + transformerFilePath
+		Print "2) outFilePath=" + outFilePath
+		
+		
+		Dim XML_in As NotesStream
+		Set XML_in=session.CreateStream
+		If Not XML_in.Open( sourceFilePath ) Then
+			Exit Function
+		End If
+		If XML_in.Bytes = 0 Then
+			Exit Function
+		End If
+		
+		Dim XSL_ss As NotesStream
+		Set XSL_ss=session.CreateStream
+		If Not XSL_ss.Open( transformerFilePath ) Then
+			Exit Function
+		End If
+		
+		Dim XML_out As NotesStream
+		Set XML_out=session.CreateStream
+		If Not XML_out.Open( outFilePath ) Then
+			Exit Function
+		End If
+		XML_out.Truncate
+		
+		Dim transformer As NotesXSLTransformer
+		Set transformer=session.CreateXSLTransformer(XML_in, XSL_ss, XML_out)
+		transformer.Process
+		
+		transformDXLAsImageResource = True
+		Delete transformer
+		
+		
+		Exit Function
+ErrHandle:
+		Print "Error (PhotoImageResource - transformDXLAsImageResource) " + Error
+		Exit Function
+		
+	End Function
+	
+	
+	
+	'*********************************
+	'Method: importDXLAsImageResource
+	'Description:
+	'	Imports the new DXL file as an Image Resource design element
+	'*********************************
+	Private Function importDXLAsImageResource() As Boolean
+		
+		On Error Goto ErrHandle
+		
+		Sleep(1)
+		
+		Dim importFilePath As String
+		importFilePath = tempFolderPath + thumbnail_dxl_photo_image_filename
+		Print "3) importFilePath=" + importFilePath
+		
+		
+		Dim stream As NotesStream
+		Set stream=session.CreateStream
+		If Not stream.Open( importFilePath ) Then
+			Exit Function
+		End If
+		
+		Dim importer As NotesDXLImporter
+		Set importer = session.CreateDXLImporter( stream, db )
+		
+		
+		'This command is not working as described in Domino Designer Help.
+		importer.DesignImportOption = DXLIMPORTOPTION_REPLACE_ELSE_CREATE
+		
+		'Import the new Image Resource
+		Call importer.Process
+		
+		importDXLAsImageResource = True
+		Delete importer
+		
+		
+		Exit Function
+ErrHandle:
+		Print "Error (PhotoImageResource - importDXLAsImageResource) " + Error
+		Exit Function
+		
+	End Function
+	
+	
+	
+	'*********************************
+	'Method: clearImageResource
+	'Params:
+	'	imageResourceName = Name of the Image Resource design element.
+	'Description:
+	'	Deletes the named Image Resource from the database.
+	'*********************************
+	Public Function clearImageResource( imageResourceName As String ) As Boolean
+		
+		On Error Goto ErrHandle
+		
+		'Find the Image Resource for this Photo, and remove it.
+		Dim nc As NotesNoteCollection
+		Set nc = db.CreateNoteCollection(False)
+		nc.SelectImageResources = True
+		Call nc.BuildCollection
+		
+		Dim nid As String
+		Dim nextid As String
+		Dim i As Integer
+		Dim note As NotesDocument
+		
+		nid = nc.GetFirstNoteId
+		
+		For i = 1 To nc.Count
+			nextid = nc.GetNextNoteId( nid )
+			Set note = db.GetDocumentByID( nid )
+			
+			If( note.GetItemValue( "$TITLE" )(0) = imageResourceName ) Then
+				Call note.Remove( False )
+				clearImageResource = True
+				Exit Function
+			End If
+			
+			nid = nextid
+		Next
+		
+		
+		Exit Function
+ErrHandle:
+		Print "Error (PhotoImageResource - clearImageResource) " + Error
+		Exit Function
+		
+	End Function
+	
+	
+	
+	'*********************************
+	'Method: detachTransformerToDisk
+	'Description:
+	'	Saves the transform.xsl and DTD files to the user/server temporary directory.
+	'*********************************
+	Private Sub detachTransformerToDisk()
+		
+		On Error Goto ErrHandle
+		
+		Dim dtdFilePath As String
+		dtdFilePath = Left( tempFolderPath, Len(tempFolderPath)-1 ) + "/" + thumbnail_dxl_domino_dtd
+		
+		
+		'We must manually generate this file, so we can add the path to the DTD.
+		Dim imageResourceXSL As ImageResourceXSL
+		Set imageResourceXSL = New ImageResourceXSL( tempFolderPath & thumbnail_dxl_transform_xsl_filename, dtdFilePath )
+		Call imageResourceXSL.writeFileToDisk()
+		
+		
+		'DTD is located on the "Using This Database" document.
+		Dim usingThisDatabaseDocument As NotesDocument
+		Set usingThisDatabaseDocument = db.GetDocumentByID("FFFF0100")
+		
+		Dim body As Variant
+		Set body = usingThisDatabaseDocument.GetFirstItem( "$Body" )
+		
+		Dim object As NotesEmbeddedObject
+		Set object = body.GetEmbeddedObject( "domino_7_0_2.dtd" )
+		Call object.ExtractFile( tempFolderPath & thumbnail_dxl_domino_dtd )
+		
+		
+		Exit Sub
+ErrHandle:
+		Print "Error (PhotoImageResource - detachTransformerToDisk) " + Error
+		Exit Sub
+		
+	End Sub
+	
+	
+	
+End Class

@@ -1,0 +1,37 @@
+<?xml version='1.0' encoding='utf-8'?>
+<!DOCTYPE note SYSTEM 'xmlschemas/domino_8_5_3.dtd'>
+<note class='sharedfield' xmlns='http://www.lotus.com/dxl' version='8.5' maintenanceversion='3.0'
+ replicaid='8025798A0032A61C'>
+<noteinfo noteid='13a' unid='60348EB36A0C2990802577FA005603A0' sequence='1'>
+<created><datetime>20101215T153930,24+00</datetime></created>
+<modified><datetime>20120119T091315,81+00</datetime></modified>
+<revised><datetime>20101215T153930,25+00</datetime></revised>
+<lastaccessed><datetime>20120119T091315,81+00</datetime></lastaccessed>
+<addedtofile><datetime>20120119T091315,81+00</datetime></addedtofile></noteinfo>
+<updatedby><name>CN=Mark Barton/OU=CDS/OU=CG/O=CAPITAL</name><name>CN=Mark Barton/O=shiny</name><name
+>CN=Mark Barton/OU=UK/O=AGCS-INT</name><name>CN=Mail Administrator/O=ALLIANZ-MA</name><name
+>CN=Mark Barton/OU=Systems/O=TFI</name></updatedby>
+<wassignedby><name>CN=Mail Administrator/O=ALLIANZ-MA</name></wassignedby>
+<item name='$HTMLCode' sign='true'>
+<rawitemdata type='1'>
+</rawitemdata></item>
+<item name='$TITLE'><text>AuthorName</text></item>
+<item name='$Info' sign='true'>
+<rawitemdata type='1'>
+hhgBAIAAAAAAgAAAAQABAP///wAQAAAA
+</rawitemdata></item>
+<item name='$Flags'><text/></item>
+<item name='$DesignerVersion' sign='true'><text>6.5</text></item>
+<item name='AuthorName' placeholder='true'>
+<rawitemdata type='0'>
+</rawitemdata></item>
+<item name='$Fields'><text>AuthorName</text></item>
+<item name='$Body' summary='true' sign='true'>
+<rawitemdata type='1'>
+gQKC/1oAAQAAAAAAAAAAAKAFAACgBQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAABAAAAAJSHAAAAAAAAAAAAAAAAAQAAAAQAAACDBAEAhf8IAAEAAArdBgAAiv/+/1AA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAIr/OACEAAAHADACAAAAAAAAAgEAAggKAAAAAAAAAAoAAAAAAAoA
+AAAIAPQAAwBBdXRob3JOYW1l3gYAAIr/hf8IAAEAAAo=
+</rawitemdata></item></note>
+

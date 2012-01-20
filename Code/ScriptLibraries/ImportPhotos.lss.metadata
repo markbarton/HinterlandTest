@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?><note class="filter" maintenanceversion="3.0" replicaid="8025798A0032A61C" version="8.5" xmlns="http://www.lotus.com/dxl">
+<noteinfo noteid="1ee" sequence="4" unid="9F86330A463F424E802578080036FAD9">
+<created><datetime>20101229T100031,61+00</datetime></created>
+<modified><datetime>20120119T091324,07+00</datetime></modified>
+<revised><datetime dst="true">20110614T135406,80+01</datetime></revised>
+<lastaccessed><datetime>20120119T091324,07+00</datetime></lastaccessed>
+<addedtofile><datetime>20120119T091324,07+00</datetime></addedtofile></noteinfo>
+<updatedby><name>CN=Shiny Design/OU=Systems/O=TFI</name></updatedby>
+<wassignedby><name>CN=Shiny Design/OU=Systems/O=TFI</name></wassignedby>
+<item name="$TITLE" sign="true"><text>ImportPhotos</text></item>
+<item name="$Flags"><text>s34Q</text></item>
+<item name="$PublicAccess" sign="true"><text>1</text></item>
+
+</note>

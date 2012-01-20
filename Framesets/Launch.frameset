@@ -1,0 +1,39 @@
+<?xml version='1.0' encoding='utf-8'?>
+<!DOCTYPE note SYSTEM 'xmlschemas/domino_8_5_3.dtd'>
+<note class='form' xmlns='http://www.lotus.com/dxl' version='8.5' maintenanceversion='3.0'
+ replicaid='8025798A0032A61C'>
+<noteinfo noteid='1be' unid='A28B811BA9AB4DD1802577FA0055F813' sequence='3'>
+<created><datetime>20101215T153900,67+00</datetime></created>
+<modified><datetime>20120119T091321,79+00</datetime></modified>
+<revised><datetime>20111031T155402,55+00</datetime></revised>
+<lastaccessed><datetime>20120119T091321,79+00</datetime></lastaccessed>
+<addedtofile><datetime>20120119T091321,79+00</datetime></addedtofile></noteinfo>
+<updatedby><name>CN=Mark 2 Barton/OU=PharmRD/O=GSK</name><name>CN=Mark 2 Barton/OU=Complementary/OU=PharmRD/O=GSK</name><name
+>CN=Mark Z Barton/OU=LON/OU=GB/OU=Marsh/O=MMC</name><name>CN=Notes Administrator/O=DEV</name><name
+>CN=Mark Z Barton/OU=LON/OU=GB/OU=Marsh/O=MMC</name><name>CN=Mark Barton/OU=76012X/OU=IT/OU=National/O=ErnstYoung/C=GB</name><name
+>CN=Agent Manager/OU=IT/OU=National/O=ErnstYoung/C=GB</name><name>CN=Mark Barton/OU=76012X/OU=IT/OU=National/O=ErnstYoung/C=GB</name><name
+>CN=Mark Barton/OU=CDS/OU=CG/O=CAPITAL</name><name>CN=Automated Message/OU=CDS/OU=CG/O=CAPITAL</name><name
+>CN=Mark Barton/OU=CDS/OU=CG/O=CAPITAL</name><name>CN=Mark Barton/O=SHINY</name><name
+>CN=Mark Barton/O=shiny</name><name>CN=Mark Barton/OU=UK/O=AGCS-INT</name><name
+>CN=Mail Administrator/O=ALLIANZ-MA</name><name>CN=Mark Barton/OU=Systems/O=TFI</name><name
+>CN=Shiny Design/OU=Systems/O=TFI</name></updatedby>
+<wassignedby><name>CN=Shiny Design/OU=Systems/O=TFI</name></wassignedby>
+<item name='$TITLE' sign='true'><text>Launch</text></item>
+<item name='$Comment' sign='true'><text/></item>
+<item name='$FrameSet' sign='true'>
+<rawitemdata type='1'>
+7/8YAAIABgAAAAAAAAAAAAAAAAAAAAAA8P8+AEQAAAABAAAAAAABAAEAAAAAAAUAAAAAAAUAAAAA
+AAEAAgAAAAAAAQAAAAAAAAADAAEAAQC5AAIATgDw/0IAAAAAAAEAAAAAAAEAAQAAAAAABQAAAAAA
+BQAAAAAAAwABAAAAAAAFAAAAAAAAAAEAIwADAFQAAwALAAMAAQDx/zwAEAAAAABAAQECAAEAAQAA
+AAAABAAAAAQAAQAAAAAAAABsZWZ0bWFpbgEA////bAEAAAoBAAAAAGz2/ygAAAAAAAMABwAGAAAA
+AAAAAAAAAAAAAAAAAAAAAAAATkFWVG9w8f88ABAAAAAAQAEAAgABAAEAAAAAAAQAAAAEAAEAAAAA
+AAAAbGVmdG1haW4BAP///2wBAAAKAQAAAABs9v8rAAAAAAADAAcACQAAAAAAAAAAAAAAAAAAAAAA
+AAAAAE5vdGVzXE5hdj/x/zQAEAAAAABAAQECAAEAAQAAAAAAAAAAAAAAAQAAAAAAAAABAP///2wB
+AAAKAQAAAABs9v8rAAAAAAADAAcACQAAAAAAAAAAAAAAAAAAAAAAAAAAAE5hdkJvdHRvbT/x/zgA
+AAEAAABAAQADAAEAAQAAAAAABAAAAAAAAQAAAAAAAABtYWluAQD///9sAQAACgEAAAAAbPb/PwAA
+AAAAAwACAAQACwAOAAAAAAAAAAAAREVWMDMvU2hpbnlIaW50ZXJsYW5kLm5zZgAAAAAAAAAAUGFn
+ZT8=
+</rawitemdata></item>
+<item name='$Flags'><text>#34CQ</text></item>
+<item name='$DesignerVersion'><text>8.5.3</text></item></note>
+

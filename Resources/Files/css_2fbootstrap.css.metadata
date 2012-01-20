@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?><note class="form" maintenanceversion="3.0" replicaid="8025798A0032A61C" version="8.5" xmlns="http://www.lotus.com/dxl">
+<noteinfo noteid="232" sequence="7" unid="C9C3EEC06B1B73978025796A003F8217">
+<created><datetime>20111218T113340,71+00</datetime></created>
+<modified><datetime>20120119T091332,85+00</datetime></modified>
+<revised><datetime>20120109T151047,99+00</datetime></revised>
+<lastaccessed><datetime>20120119T091332,85+00</datetime></lastaccessed>
+<addedtofile><datetime>20120119T091332,85+00</datetime></addedtofile></noteinfo>
+<updatedby><name>CN=Shiny Design/OU=Systems/O=TFI</name></updatedby>
+<wassignedby><name>CN=Shiny Design/OU=Systems/O=TFI</name></wassignedby>
+<item name="$FlagsExt"><text>D</text></item>
+<item name="$TITLE" sign="true"><text>css/bootstrap.css</text></item>
+<item name="$DesignerVersion"><text>8.5.3</text></item>
+
+<item name="$FileModDT" sign="true"><datetime>20120105T105749,00+00</datetime></item>
+
+
+
+<item name="$Flags"><text>345CgQ</text></item>
+<item name="$FileNames" sign="true"><text>bootstrapnew.css</text></item>
+<item name="$MimeType"><text>text/css</text></item></note>

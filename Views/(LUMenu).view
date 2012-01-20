@@ -1,0 +1,51 @@
+<?xml version='1.0' encoding='utf-8'?>
+<!DOCTYPE note SYSTEM 'xmlschemas/domino_8_5_3.dtd'>
+<note class='view' xmlns='http://www.lotus.com/dxl' version='8.5' maintenanceversion='3.0'
+ replicaid='8025798A0032A61C'>
+<noteinfo noteid='1ae' unid='CB6FD521A55991298025780F003D47A2' sequence='4'>
+<created><datetime>20110105T110920,34+00</datetime></created>
+<modified><datetime>20120119T091321,04+00</datetime></modified>
+<revised><datetime dst='true'>20110614T135337,85+01</datetime></revised>
+<lastaccessed><datetime>20120119T091321,04+00</datetime></lastaccessed>
+<addedtofile><datetime>20120119T091321,04+00</datetime></addedtofile></noteinfo>
+<updatedby><name>CN=Shiny Design/OU=Systems/O=TFI</name></updatedby>
+<wassignedby><name>CN=Shiny Design/OU=Systems/O=TFI</name></wassignedby>
+<item name='$FormatNote' summary='true'>
+<rawitemdata type='4'>
+AQCM6y2dXAyuESaqRwD7dyWA
+</rawitemdata></item>
+<item name='$FormulaClass' sign='true'><text>1</text></item>
+<item name='$TITLE' sign='true'><text>(LUMenu)</text></item>
+<item name='$Index' sign='true'><text/></item>
+<item name='$Formula' summary='true' sign='true'><formula compiled='true'>
+fAAFAC4AKQADAA0ACQAJAE1lbnVTb3J0T3JkZXJOYXZCYXJLZXkkQ29uZmxpY3QABAAEAAAAOgAF
+AAQAZm9ybQEACwBDb250ZW50UGFnZQAKAgUADQBJbmNsdWRlSW5NZW51AAEAAAALAhwCAwAHAA4A
+CAAJTDFTNFM1Uw==
+</formula></item>
+<item name='$Collation' summary='true'>
+<rawitemdata type='2'>
+KgACAABEgGYAAAANAIBmAA0ACQBNZW51U29ydE9yZGVyTmF2QmFyS2V5
+</rawitemdata></item>
+<item name='$ViewFormat' summary='true' sign='true'>
+<rawitemdata type='5'>
+AQACAAcAi3wAAFZDAQANAAAAAAAAACIAAQAACgAAAAAAAAAAAAICAAAAVkMBAAkAAAAAAAAAiQAB
+AAAKAAAAAAAAAAAAAgIAAABNZW51U29ydE9yZGVyTmF2QmFyS2V5JgABAAAAAQEACQEAAAoBAQoK
+AAAvAK0rAwEBAAEAAAAAAAAAAABXQwEBAAkAAAAAAAAAAAAAAAAAAAAAAAAEAAAAAAD//wAAAAAA
+AAAAAAAAAAAAV0MBAQAJAAAAAAAAAAAAAAAAAAAAAAAABAAAAAAA//8AAAAAAAAAAAAAAAAAAEIA
+hAAAAAEA////AAEA8/f+AAEA0tLSAAAAAAAAAAAAAQD///8AAQDA4f8AAwABAAAAAAABAAAAgAAB
+AAAAAAAAAAgAAAAAAAEA
+</rawitemdata></item>
+<item name='$Fonts' sign='true'><textlist/></item>
+<item name='$Comment' sign='true'><text/></item>
+<item name='$Flags'><text>PY</text></item>
+<item name='$DesignerVersion'><text>8.5.2</text></item>
+<item name='$V5ACTIONS' sign='true'>
+<rawitemdata type='1'>
+i/8oAAEABSZWZXJkYW5hAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAL0cKAAAAAEAAQAAABEAAAAA
+AAAABQAACAgAAgB5/2wAAQDA4f8AAQAAAAAAAQAAAAAAAQDA4f8AAAAfAAAAAAAAAAAAAwAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAD2/zQAAAAAAAMAEwASAAAAAAAAAAAAAAAAAAAAAAAAAAAAbm90ZXMvYnV0dG9uYmcuZ2lm
+/P86AAAAAAABAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAA
+AA==
+</rawitemdata></item></note>
+

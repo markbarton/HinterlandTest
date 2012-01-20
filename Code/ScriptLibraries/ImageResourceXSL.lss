@@ -1,0 +1,126 @@
+'++LotusScript Development Environment:2:5:(Options):0:66
+Option Public
+Option Declare
+
+'++LotusScript Development Environment:2:5:(Forward):0:1
+Declare Class ImageResourceXSL
+
+'++LotusScript Development Environment:2:5:(Declarations):0:10
+
+%REM
+Thumbnails are small images created from the user's large photo attachment.  These small thumbnails are 100px wide.
+When thumbnails are shown on the web, it uses the file on the Thumbnail document.  These are response documents
+to the main Photo document.
+
+Lotus Notes clients can not display images from those Thumbnail documents.  Lotus Notes clients can only display
+an Image Resource in views.  For this reason, we use Domino's DXL libraries to dynamically create a new Image Resouce
+design element in this database.  This Image Resource can then appear in Lotus Notes client views.
+
+This class will create the "transform.xsl" file used in the DXL process.  This file must be created dynamically, since is must
+know the location of the DTD file, which is located in the user's temp directory.
+%END REM
+
+Class ImageResourceXSL
+	
+	Private fileNum As Integer
+	Private saveAs As String
+	Private schemaFilePath As String
+	
+	
+	
+	'*********************************
+	'Method: New
+	'Params:
+	'	saveAs = Complete filepath where the file transform.xsl file should be saved to disk.
+	'	schemaFilePath = Complete filepath where the DTD is located on disk.
+	'Description:
+	'	Creates the XSL transformer file on disk.  This must be generated, since we don't know the exact location of the DTD file on disk.
+	'*********************************
+	Public Sub New( saveAs As String, schemaFilePath As String )
+		Me.saveAs = saveAs
+		Me.schemaFilePath = schemaFilePath
+		
+		If( schemaFilePath = "" ) Then
+			Me.schemaFilePath = "D:\lotus\domino\xmlschemas/domino_7_0_2.dtd"
+		End If
+		
+	End Sub
+	
+	
+	
+	'*********************************
+	'Method: writeFileToDisk
+	'Description:
+	'	Creates the new transform.xsl file on disk in the user's temp directory.
+	'*********************************
+	Public Sub writeFileToDisk()
+		
+		Call OpenFile()
+		
+		Call WriteLine( |<?xml version='1.0' encoding='utf-8'?>| )
+		Call WriteLine( |<!DOCTYPE imageresource SYSTEM '| + schemaFilePath + |'>| )
+		Call WriteLine( || )
+		Call WriteLine( |<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0" xmlns:dxl='http://www.lotus.com/dxl'>| )
+		Call WriteLine( |<xsl:output method='xml' indent='no'/>| )
+		Call WriteLine( |<xsl:strip-space elements='*'/>| )
+		Call WriteLine( || )
+		Call WriteLine( |<xsl:template match='/'>| )
+		Call WriteLine( |<xsl:apply-templates />| )
+		Call WriteLine( |</xsl:template>| )
+		Call WriteLine( || )
+		Call WriteLine( |<xsl:template match='dxl:document'>| )
+		Call WriteLine( || )
+		Call WriteLine( |<xsl:text disable-output-escaping='yes'>&lt;!DOCTYPE imageresource SYSTEM '| + schemaFilePath + |'&gt;</xsl:text>| )
+		Call WriteLine( || )
+		Call WriteLine( |<xsl:text disable-output-escaping='yes'>&lt;imageresource</xsl:text>| )
+		Call WriteLine( |<xsl:text disable-output-escaping='yes'> name='$TN_</xsl:text><xsl:value-of select="@parent"/><xsl:text disable-output-escaping='yes'>.JPG'</xsl:text>| )
+		Call WriteLine( || )
+		Call WriteLine( |<xsl:for-each select="dxl:noteinfo">| )
+		Call WriteLine( |<xsl:text disable-output-escaping='yes'> xmlns='http://www.lotus.com/dxl'</xsl:text>| )
+		Call WriteLine( |<xsl:text disable-output-escaping='yes'> version='7.0'</xsl:text>| )
+		Call WriteLine( |<xsl:text disable-output-escaping='yes'> maintenanceversion='2.0'</xsl:text>| )
+		Call WriteLine( |<xsl:text disable-output-escaping='yes'> replicaid='852572FC0008CDA7'</xsl:text>| )
+		Call WriteLine( |<xsl:text disable-output-escaping='yes'> noreplace='true'</xsl:text>| )
+		Call WriteLine( |<xsl:text disable-output-escaping='yes'> publicaccess='false'</xsl:text>| )
+		Call WriteLine( |<xsl:text disable-output-escaping='yes'> designerversion='7'</xsl:text>| )
+		Call WriteLine( |<xsl:text disable-output-escaping='yes'>&gt;</xsl:text>| )
+		Call WriteLine( |</xsl:for-each>| )
+		Call WriteLine( || )
+		Call WriteLine( |<xsl:for-each select="dxl:item[@name='$FILE']"><xsl:text disable-output-escaping='yes'>&lt;jpeg&gt;</xsl:text><xsl:value-of select="./dxl:object/dxl:file/dxl:filedata"/><xsl:text disable-output-escaping='yes'>&lt;/jpeg&gt;</xsl:text></xsl:for-each>| )
+		Call WriteLine( |<xsl:text disable-output-escaping='yes'>&lt;item name='$MimeType' sign='true'&gt;</xsl:text>| )
+		Call WriteLine( |<xsl:text disable-output-escaping='yes'>&lt;textlist&gt;</xsl:text>| )
+		Call WriteLine( || )
+		Call WriteLine( |<xsl:text disable-output-escaping='yes'>&lt;text&gt;image/jpeg&lt;/text&gt;</xsl:text>| )
+		Call WriteLine( |<xsl:text disable-output-escaping='yes'>&lt;/textlist&gt;</xsl:text>| )
+		Call WriteLine( |<xsl:text disable-output-escaping='yes'>&lt;/item&gt;</xsl:text>| )
+		Call WriteLine( |<xsl:text disable-output-escaping='yes'>&lt;/imageresource&gt;</xsl:text>| )
+		Call WriteLine( || )
+		Call WriteLine( |</xsl:template>| )
+		Call WriteLine( || )
+		Call WriteLine( |<!-- Match all text that has not yet been picked up by the templates, and discard it. -->| )
+		Call WriteLine( |<xsl:template match="text()">| )
+		Call WriteLine( |</xsl:template>| )
+		Call WriteLine( |</xsl:stylesheet>| )
+		
+		Call CloseFile()
+		
+	End Sub
+	
+	
+	
+	Private Sub OpenFile()
+		fileNum% = Freefile()
+		Open saveAs For Output As fileNum%
+	End Sub
+	
+	Private Sub CloseFile()
+		Close fileNum%
+	End Sub
+	
+	Private Sub WriteLine( txt As String )
+		Print #FileNum%, txt
+	End Sub
+	
+	
+	
+End Class

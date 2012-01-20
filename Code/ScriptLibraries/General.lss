@@ -1,0 +1,329 @@
+'++LotusScript Development Environment:2:5:(Options):0:74
+Option Public
+Option Explicit
+
+
+'++LotusScript Development Environment:2:5:(Forward):0:1
+Declare Sub Initialize
+Declare Function returnCommonName(nameString As String) As String
+Declare Function getTemp As String
+Declare Function inAdmin As Integer
+Declare Function returnDocument(docreference As String) As notesdocument
+Declare Function returnMemoConfig(memokey As String) As NotesDocument
+Declare Function returnPersonName(initials As String) As String
+Declare Function inDev As Integer
+Declare Function returnSingleKeyword(key As String) As String
+Declare Function returnAppConfig As notesdocument
+Declare Function logConsole(msg As String)
+Declare Function returnAbbreviatedName(nameString As String) As String
+Declare Function returnKeywordValue(key As String) As Variant
+Declare Sub addAudit(doc As NotesDocument,auditInfo As String)
+Declare Sub addAuditRT(doc As NotesDocument,auditInfo As String,linkdoc As notesdocument)
+Declare Function returnInitials(nameString As String) As String
+Declare Function returnKeywordDoc(key As String) As NotesDocument
+Declare Function newTest
+
+'++LotusScript Development Environment:2:5:(Declarations):0:10
+
+Declare Function GetTempPath Lib "kernel32" Alias "GetTempPathA" (Byval nBufferLength As Long, Byval lpBuffer As String) As Long 
+
+Public Const max_path_length = 255 
+Public Const ConsoleLoggingEnabled=True
+Dim audit As NotesItem
+
+
+
+'++LotusScript Development Environment:2:2:Initialize:1:10
+Sub Initialize
+	
+End Sub
+
+
+'++LotusScript Development Environment:2:1:returnCommonName:1:8
+Function returnCommonName(nameString As String) As String
+		'----This will process the inbound name and always return the abbreivtaed
+	Dim tmpname As NotesName
+	Dim s As New notessession
+	
+	Set tmpname=s.createname(nameString)
+	returnCommonName=Cstr(tmpname.common)
+End Function
+
+'++LotusScript Development Environment:2:1:getTemp:1:8
+Function getTemp As String
+	Dim temp_Path As String
+	Dim result As String
+	
+	temp_path$ = String$(max_path_length, 0) 
+	result = gettemppath(max_path_length, temp_path$) 
+	temp_path$ = Left(temp_path$,result)
+	
+	getTemp=temp_path$
+End Function
+
+'++LotusScript Development Environment:2:1:inAdmin:1:8
+Function inAdmin As Integer
+	inAdmin=False	
+'--are we in the admin role
+	Dim roles As Variant
+	roles=Evaluate("@userroles")
+	
+	Forall items In roles
+		If items="[Admin]" Then inAdmin=True
+	End Forall
+End Function
+
+
+
+'++LotusScript Development Environment:2:1:returnDocument:1:8
+Function returnDocument(docreference As String) As notesdocument
+	'---This function will return a document based on the document reference id
+	Dim s As New notessession
+	Dim db As notesdatabase
+	Dim view As notesview
+	Dim doc As notesdocument
+	
+	Set db=s.currentdatabase
+	Set view=db.GetView("(LUDocID)")
+	Set doc=view.GetDocumentByKey(docreference,True)
+	
+	Set returnDocument=doc
+	
+	
+	
+End Function
+
+'++LotusScript Development Environment:2:1:returnMemoConfig:1:8
+Function returnMemoConfig(memokey As String) As NotesDocument
+	Dim s As New notessession
+	Dim db As notesdatabase
+	
+	Set db=s.currentdatabase
+	Dim view As NotesView
+	Dim memoConfig As notesdocument
+	
+	Set view=db.GetView("(LUMemoConfiguration)")
+	Set memoConfig=view.GetDocumentByKey(memokey,True)
+	
+	Set returnMemoConfig=memoConfig
+	
+	Dim rt As NotesRichTextItem
+	
+End Function
+
+
+
+'++LotusScript Development Environment:2:1:returnPersonName:1:8
+Function returnPersonName(initials As String) As String
+		'///This function performs a lookup to the NAB and returns the persons name (from initials)
+	Dim 	s As New NotesSession
+	Dim db As NotesDatabase	
+	Dim nab As NotesDatabase
+	Dim view As NotesView
+	Dim pname As NotesName
+	
+	Dim checkdoc As notesdocument
+	Set db=s.currentdatabase
+	
+	Set nab=s.getdatabase(db.server,"names.nsf")
+	Set view=nab.GetView("($Users)")
+	Set checkdoc=view.GetDocumentByKey(initials,True)
+	If checkdoc Is Nothing Then 
+	Else	
+		returnPersonName=checkdoc.fullname(0)		
+	End If
+End Function
+
+'++LotusScript Development Environment:2:1:inDev:1:8
+Function inDev As Integer
+	inDev=False	
+'--are we in the admin role
+	Dim roles As Variant
+	roles=Evaluate("@userroles")
+	
+	Forall items In roles
+		If items="[Dev]" Then inDev=True
+	End Forall
+End Function
+
+'++LotusScript Development Environment:2:1:returnSingleKeyword:1:8
+Function returnSingleKeyword(key As String) As String
+	'####Return a single keyword value
+	
+	Dim s As New NotesSession
+	Dim db As notesdatabase
+	Dim view As NotesView
+	Dim doc As notesdocument
+	
+	Set db=s.CurrentDatabase
+	Set view=db.GetView("(LUKeywords)")
+	Set doc=view.GetDocumentByKey(key,True)
+	
+	If doc Is Nothing Then
+		returnSingleKeyword=""
+	Else
+		returnSingleKeyword=doc.keywordvalue(0)
+	End If
+	Exit Function
+	
+	
+End Function
+
+
+
+
+
+'++LotusScript Development Environment:2:1:returnAppConfig:1:8
+Function returnAppConfig As notesdocument
+	'///Return the application configuration document for this database
+	Dim s As New notessession
+	Dim db As NotesDatabase
+	Dim view As notesview
+	Dim doc As notesdocument
+	
+	Set db=s.currentdatabase
+	Set view=db.GetView("(XMLApplicationConfiguration)")
+	Set doc=view.GetFirstDocument
+	
+	If doc Is Nothing Then
+		'///No application configuration document so we need to create a new one to hold a demo key
+		Set doc=New notesdocument(db)
+		doc.form="ApplicationConfiguration"
+		Call doc.ReplaceItemValue("$$License","1")  '---Demo mode by default
+		doc.licensestatus="Evaluation Version Activated"
+		Call doc.replaceitemvalue("$$DemoCount","1")
+		Call doc.replaceitemvalue("$$DemoDay",Today)
+		Call doc.ComputeWithForm(False,False)		
+		Call doc.Save(True,True)
+	End If
+	
+	Set returnAppConfig=doc
+End Function
+
+'++LotusScript Development Environment:2:1:logConsole:1:8
+Function logConsole(msg As String)
+	'////If global logging enabled then log to console else do nothing
+	If ConsoleLoggingEnabled Then
+		Messagebox msg
+	End If
+End Function
+
+'++LotusScript Development Environment:2:1:returnAbbreviatedName:1:8
+Function returnAbbreviatedName(nameString As String) As String
+	'----This will process the inbound name and always return the abbreivtaed
+	Dim tmpname As NotesName
+	Dim s As New notessession
+	
+	Set tmpname=s.createname(nameString)
+	returnAbbreviatedName=Cstr(tmpname.Abbreviated)
+	
+End Function
+
+
+'++LotusScript Development Environment:2:1:returnKeywordValue:1:8
+Function returnKeywordValue(key As String) As Variant
+	'####Return a single keyword value
+	
+	Dim s As New NotesSession
+	Dim db As notesdatabase
+	Dim view As NotesView
+	Dim doc As notesdocument
+	
+	
+	Set db=s.CurrentDatabase
+	Set view=db.GetView("(LUKeywords)")
+	Set doc=view.GetDocumentByKey(key,True)
+	
+	If doc Is Nothing Then
+	Else
+		returnKeywordValue=doc.getitemvalue("keywordvalue")
+	End If
+	
+End Function
+
+
+'++LotusScript Development Environment:2:2:addAudit:1:8
+Sub addAudit(doc As NotesDocument,auditInfo As String)
+	'### This function will add to the Audit trail
+	Dim s As New notessession
+	Dim audit As NotesItem
+	
+	Set audit=doc.GetFirstItem("Audit")
+	If audit Is Nothing Then
+		Set audit=New notesitem(doc,"Audit","")
+	End If
+	
+	Call audit.appendtotextlist(Format(Now,"dd-mmm-yyyy hh:mm:ss") & " : " & s.commonusername & " : " & auditinfo)
+	
+End Sub
+
+'++LotusScript Development Environment:2:2:addAuditRT:1:8
+Sub addAuditRT(doc As NotesDocument,auditInfo As String,linkdoc As notesdocument)
+	Dim s As New notessession
+	Dim audit As NotesRichTextItem
+	
+	Set audit=doc.GetFirstItem("AuditRT")
+	If audit Is Nothing Then
+		Set audit=New notesrichtextitem(doc,"AuditRT")
+	End If
+	
+	Call audit.appendtext(Format(Now,"dd-mmm-yyyy hh:mm:ss") & " : " & s.commonusername & " : " )
+	If linkdoc Is Nothing Then
+	Else
+		Call audit.AppendDocLink(linkdoc,"Link")
+	End If
+	Call audit.appendtext(" : " & auditinfo)	
+	Call audit.AddNewline(1)
+End Sub
+
+'++LotusScript Development Environment:2:1:returnInitials:1:8
+Function returnInitials(nameString As String) As String
+	'///This function performs a lookup to the NAB and returns the 
+	Dim 	s As New NotesSession
+	Dim db As NotesDatabase	
+	Dim nab As NotesDatabase
+	Dim view As NotesView
+	Dim pname As NotesName
+	
+	Dim checkdoc As notesdocument
+	Set pname=s.CreateName(nameString)
+	Set db=s.currentdatabase
+	
+	Set nab=s.getdatabase(db.server,"names.nsf")
+	Set view=nab.GetView("($Users)")
+	Set checkdoc=view.GetDocumentByKey(pName.common,True)
+	If checkdoc Is Nothing Then 
+	Else	
+		returnInitials=checkdoc.shortname(0)		
+	End If
+End Function
+
+'++LotusScript Development Environment:2:1:returnKeywordDoc:1:8
+Function returnKeywordDoc(key As String) As NotesDocument
+	'####Return a keyword document
+	
+	Dim s As New NotesSession
+	Dim db As notesdatabase
+	Dim view As NotesView
+	Dim doc As notesdocument
+	
+	
+	Set db=s.CurrentDatabase
+	Set view=db.GetView("(LUKeywords)")
+	Set doc=view.GetDocumentByKey(key,True)
+	
+	If doc Is Nothing Then
+	Else
+		Set returnKeywordDoc=doc
+	End If
+	
+End Function
+
+'++LotusScript Development Environment:2:1:newTest:5:8
+%REM
+	Function newTest
+	Description: Comments for Function
+%END REM
+Function newTest
+	
+End Function

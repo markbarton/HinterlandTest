@@ -1,0 +1,50 @@
+<?xml version='1.0' encoding='utf-8'?>
+<!DOCTYPE note SYSTEM 'xmlschemas/domino_8_5_3.dtd'>
+<note class='view' xmlns='http://www.lotus.com/dxl' version='8.5' maintenanceversion='3.0'
+ replicaid='8025798A0032A61C'>
+<noteinfo noteid='1a2' unid='856F7F561BB78C5C8025780800516BFE' sequence='11'>
+<created><datetime>20101229T144920,62+00</datetime></created>
+<modified><datetime>20120119T091320,45+00</datetime></modified>
+<revised><datetime dst='true'>20110614T135332,97+01</datetime></revised>
+<lastaccessed><datetime>20120119T091320,45+00</datetime></lastaccessed>
+<addedtofile><datetime>20120119T091320,45+00</datetime></addedtofile></noteinfo>
+<updatedby><name>CN=Shiny Design/OU=Systems/O=TFI</name></updatedby>
+<wassignedby><name>CN=Shiny Design/OU=Systems/O=TFI</name></wassignedby>
+<item name='$FormatNote' summary='true'>
+<rawitemdata type='4'>
+AQCM6y2dXAyuESaqRwD7dyWA
+</rawitemdata></item>
+<item name='$FormulaClass' sign='true'><text>1</text></item>
+<item name='$TITLE' sign='true'><text>(LUImageConfig)</text></item>
+<item name='$Index' sign='true'><text/></item>
+<item name='$Formula' summary='true' sign='true'><formula compiled='true'>
+kgACAC4AAgAkNwUABQBUaXRsZQABAAEAIAABAAEAJgAfAgEAAAABAAAAHwKEAwMABQAYABMAAgAC
+AAkAJDckQ29uZmxpY3QABAAEAAAAOAAFAAQAZm9ybQEABwBDb250ZW50AAoCBQAHAFNlY3Rpb24A
+AQAIAEltYWdlQmFyCgIcAgMABwAOAAgACUwxUzRTNVM=
+</formula></item>
+<item name='$Collation' summary='true'>
+<rawitemdata type='2'>
+DwABAABEAGYAAAACACQ3
+</rawitemdata></item>
+<item name='$ViewFormat' summary='true' sign='true'>
+<rawitemdata type='5'>
+AQABAAgAi3wAAFZDAQACAAAAPAAAAFAAAQAACgAAAAAAAAAAAAICAAAAJDc8AAIALgACACQ3BQAF
+AFRpdGxlAAEAAQAgAAEAAQAmAB8CAQAAAAEAAAAfAoQDAwAHAAwABQAJMFMwRQAmAAEAAAABAQAJ
+AQAACgEBCgoAAC8ArSsDAQEAAQAAAAAAAAAAAFdDAQEACQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AP//AAAAAAAAAAAAAAAAAABCAIQAAAABAP///wABAPP3/gABANLS0gAAAAAAAAAAAAEA////AAEA
+wOH/AAMAAQAAAAAAAQAAAIAAAQAAAAAAAAAIAAAAAAABAA==
+</rawitemdata></item>
+<item name='$FormFormula' summary='true' sign='true'><formula>"ConfigNew.xml"</formula></item>
+<item name='$Comment' sign='true'><text/></item>
+<item name='$Flags'><text>PY</text></item>
+<item name='$DesignerVersion'><text>8.5.2</text></item>
+<item name='$V5ACTIONS' sign='true'>
+<rawitemdata type='1'>
+i/8oAAEABSZWZXJkYW5hAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAL0cKAAAAAEAAQAAABEAAAAA
+AAAABQAACAgAAgB5/2wAAQDA4f8AAQAAAAAAAQAAAAAAAQDA4f8AAAAfAAAAAAAAAAAAAwAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAD2/zQAAAAAAAMAEwASAAAAAAAAAAAAAAAAAAAAAAAAAAAAbm90ZXMvYnV0dG9uYmcuZ2lm
+/P86AAAAAAABAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAA
+AA==
+</rawitemdata></item></note>
+

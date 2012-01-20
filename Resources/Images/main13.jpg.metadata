@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?><note class="form" maintenanceversion="3.0" replicaid="8025798A0032A61C" version="8.5" xmlns="http://www.lotus.com/dxl">
+<noteinfo noteid="27a" sequence="1" unid="2C48389684895D91802579870040625D">
+<created><datetime>20120116T114314,85+00</datetime></created>
+<modified><datetime>20120119T091336,52+00</datetime></modified>
+<revised><datetime>20120116T114315,08+00</datetime></revised>
+<lastaccessed><datetime>20120119T091336,52+00</datetime></lastaccessed>
+<addedtofile><datetime>20120119T091336,52+00</datetime></addedtofile></noteinfo>
+<updatedby><name>CN=Shiny Design/OU=Systems/O=TFI</name></updatedby>
+<wassignedby><name>CN=Shiny Design/OU=Systems/O=TFI</name></wassignedby>
+<item name="$TITLE"><text>main13.jpg</text></item>
+<item name="$Flags"><text>D34CiQ</text></item>
+<item name="$FlagsExt"><text>D</text></item>
+<item name="$ImagesWide" sign="true"><number>1</number></item>
+<item name="$ImagesHigh" sign="true"><number>1</number></item>
+<item name="$ImagesColorize" sign="true"><number>0</number></item>
+
+
+<item name="$MimeType" sign="true"><text>image/jpeg</text></item>
+<item name="$FileModDT" sign="true"><datetime>20120116T113226,55+00</datetime></item>
+<item name="$ImageNames" sign="true"><text>main13.jpg</text></item>
+<item name="$DesignerVersion"><text>8.5.3</text></item></note>

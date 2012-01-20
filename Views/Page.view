@@ -1,0 +1,58 @@
+<?xml version='1.0' encoding='utf-8'?>
+<!DOCTYPE note SYSTEM 'xmlschemas/domino_8_5_3.dtd'>
+<note class='view' xmlns='http://www.lotus.com/dxl' version='8.5' maintenanceversion='3.0'
+ replicaid='8025798A0032A61C'>
+<noteinfo noteid='1b6' unid='7EB593BD378ED687802577FB00352710' sequence='10'>
+<created><datetime>20101216T094034,08+00</datetime></created>
+<modified><datetime>20120119T091321,43+00</datetime></modified>
+<revised><datetime>20120118T101952,43+00</datetime></revised>
+<lastaccessed><datetime>20120120T105928,77+00</datetime></lastaccessed>
+<addedtofile><datetime>20120119T091321,43+00</datetime></addedtofile></noteinfo>
+<updatedby><name>CN=Shiny Design/OU=Systems/O=TFI</name></updatedby>
+<wassignedby><name>CN=Shiny Design/OU=Systems/O=TFI</name></wassignedby>
+<item name='$FormulaClass' sign='true'><text>1</text></item>
+<item name='$TITLE' sign='true'><text>Page</text></item>
+<item name='$Index' sign='true'><text/></item>
+<item name='$Formula' summary='true' sign='true'><formula compiled='true'>
+YgAFADIALQAFAAUACQAEAAkABABUaXRsZU1haW5JbWFnZU1haW4kQ29uZmxpY3QkUkVGAAQABAAA
+ACAABQAEAGZvcm0BAAsAQ29udGVudFBhZ2UACgIDAAcACgAEAAlMMVM=
+</formula></item>
+<item name='$Collation' summary='true'>
+<rawitemdata type='2'>
+EgABAABEAGYAAAAFAFRpdGxl
+</rawitemdata></item>
+<item name='$ViewFormat' summary='true' sign='true'>
+<rawitemdata type='5'>
+AQADAAYAiAAAAFZDAQAFAAUAAAAAALYABQAICAAAAAAAAAAAAAICAAAAVkMAAAkACQAAAAAAdgAG
+AAAIAAAAAAAAAAAAAgIAAABWQwAABAAMAAAAAABMAgcAAAgAAAAAAAAAAAACAgAAAFRpdGxlVGl0
+bGVNYWluSW1hZ2VJbWFnZSBCYXJNYWluTWFpbiBDb250ZW50JgABAAAAAQEACQEAAAoBAQ4KAAAv
+AK0rAQABAAEAAAAAAAAAAABXQwgBAAgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD//wAAAAAAAAAA
+AAAAAAAAV0MJAQAIAAAAAAAAAAAAAAAAAAAAAAAABAAAAAAA//8AAAAAAAAAAAAAAAAAAFdDCgEA
+CAAAAAAAAAAAAAAAAAAAAAAAAAQAAAAAAP//AAAAAAAAAAAAAAAAAABCAAEAAAABAP///wABAPL6
+/wABAO/v7wAAAAAAAAAAAAEA////AAEA////AAAAAQAAAAAAAQAAAAAAAQAAAAAAAAAIAAAAAAAB
+AA==
+</rawitemdata></item>
+<item name='$Fonts' sign='true'><textlist><text>5</text><text>38</text><text
+>Verdana</text><text>6</text><text>38</text><text>Verdana</text><text>7</text><text
+>38</text><text>Verdana</text><text>8</text><text>38</text><text>Verdana</text><text
+>9</text><text>38</text><text>Verdana</text><text>10</text><text>38</text><text
+>Verdana</text></textlist></item>
+<item name='$Comment' sign='true'><text/></item>
+<item name='$Flags'><text>Y</text></item>
+<item name='$DesignerVersion'><text>8.5.3</text></item>
+<item name='$V5ACTIONS' sign='true'>
+<rawitemdata type='1'>
+vRw/AAAAAQABAAAAAQAAAAAAAAAAAAAACAACAHn/bAABAPDw8AABAAAAAAAJAAAAAAABAPDw8AAA
+AB8AAAAAAAAAAAADAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAPz/OgAAAAAAAQAAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAEAAAAAAAAAAAAAAAAAAAC+/1IAAAABAAAAnwEQAAsAAAAAAAAAQ3JlYXRlIFBhZ2UA
+MAAAACIAAgDoAwAAAAAAAAEACwBDb250ZW50UGFnZQDtAgMABwAMAAUACTBTMEUA9v8sAAAAAAAD
+ABMACgAAAAAAAAAAAAAAAAAAAAAAAAAAAGJ0bk5ldy5naWa+/3IAAAABAAAAnwEBAAkAAAABAAAA
+UmVwbGljYXRlAFIAAABEAAEAEQBTeXN0ZW1zIFRhc2sgTGlzdAABAAAAAQAAAAEAEgBoaW50ZXJs
+YW5kc2l0ZS5uc2YBAAAAAQAAALIGAwAHAAwABQAJMFMwRQBf/xAAAQA7LwAAAAAAAAAAX/8QAAIA
+DAAHAAAAAAAAAF//EAACAAEABwAAAAAAAABf/xAAAgACAAcAAAAAAAAAX/8QAAIACwAHAAAAAAAA
+AF//EAACABQABwAAAAAAAABf/xAAAgAJAAcAAAAAAAAAX/8QAAIACAAHAAAAAAAAAF//EAACAAoA
+BwAAAAAAAABf/xAAAgADAAcAAAAAAAAAX/8QAAIABgAHAAAAAAAAAF//EAACAAcABwAAAAAAAABf
+/xAAAgAFAAcAAAAAAAAAX/8QAAIABAAHAAAAAAAAAA==
+</rawitemdata></item></note>
+

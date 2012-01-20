@@ -1,0 +1,1898 @@
+'++LotusScript Development Environment:2:5:(Options):0:74
+%REM
+	Copyright 2008 - 2009 Conxsys 
+	Licensed under the Apache License, Version 2.0 (the "License"); 
+	you may not use this file except in compliance with the License. 
+	You may obtain a copy of the License at
+	
+	http://www.apache.org/licenses/LICENSE-2.0 
+	
+	Unless required by applicable law or agreed to in writing, software 
+	distributed under the License is distributed on an "AS IS" BASIS, 
+	WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
+	See the License for the specific language governing permissions and 
+	limitations under the License
+%ENDREM
+
+Option Public
+Option Declare
+
+Use "Flow Dependencies"
+
+'++LotusScript Development Environment:2:5:(Forward):0:1
+Declare Private Type FlowCache
+Declare Public Class FlowDocument
+Declare Public Class FlowRichTextDocument As FlowDocument	
+Declare Public Class FlowMailDocument As FlowRichTextDocument
+Declare Public Class FlowConsole As FlowDocument
+Declare Public Class FlowFile As FlowDocument
+Declare Public Class FlowMsgbox As FlowDocument
+Declare Public Class FlowDocumentFactory
+
+'++LotusScript Development Environment:2:5:(Declarations):0:10
+'********************************************************************************************
+'FLOW CACHE
+'********************************************************************************************
+Private Type FlowCache
+	logTime As String
+	logText As String
+	logLevel As Integer
+	logType As Integer
+	isNew As Boolean
+End Type
+
+'********************************************************************************************
+'FLOW DOCUMENT CLASS
+'********************************************************************************************
+Public Class FlowDocument
+	'You will see many empty subroutines, functions, and properties in this class. These empty
+	'routines will be handled by the child classes. They are listed here because we intend that
+	'every instantiation of Flow will utilize this parent class, FlowDocument, and thus this
+	'parent class needs to "know" about these routines even if it does not provide any code for
+	'them.
+	
+	'Declarations
+	'-------------------------------------------------------
+	Private m_session As NotesSession
+	Private m_db As NotesDatabase
+	Private m_serverName As String
+	Private m_agentName As String
+	Private m_logType As Integer			'Used in the Write sub to determine log document type
+	Private m_errCount As Integer
+	Private m_appName As String
+	Private m_appVersion As String
+	Private m_cache() As FlowCache		'************** Added in Beta 4 **************
+	Private m_cacheDepth As Integer		'************** Added in Beta 4 **************
+	Private m_cacheDepthAllowed As Integer	'************** Added in Beta 4 **************
+	Private m_cacheIsAlive As Boolean		'************** Added in Beta 4 **************
+	
+'=======================================================
+'PUBLIC METHODS
+'=======================================================
+	
+	'New (Constructor)
+	'-------------------------------------------------------
+	Public Sub New(db As NotesDatabase)
+		On Error Goto ErrHandler
+		
+		Let Me.m_logType = -1
+		Let Me.m_errCount = 0
+		Let Me.CacheDepthAllowed = 0		'By default cache will not be used	************** Added in Beta 4 **************
+		Let Me.m_cacheIsAlive = False		'************** Added in Beta 4 **************
+		
+		'Instantiations
+		Set Me.m_session = New NotesSession
+		
+		If db Is Nothing Then
+			Set Me.m_db = Me.m_session.CurrentDatabase
+		Else
+			Set Me.m_db = db
+		End If
+		
+		'Set defaults
+		If Me.m_session.CurrentDatabase.Server <> "" Then
+			Dim serverName As NotesName
+			Set serverName = New NotesName(Me.m_session.CurrentDatabase.Server)
+			Let Me.m_serverName = serverName.Abbreviated
+		Else
+			Let Me.m_serverName = LOCAL_TXT
+		End If
+		
+		Let Me.m_agentName = Me.m_session.CurrentAgent.Name
+		
+		Exit Sub
+		
+ErrHandler:
+		Error Err, Error & Chr$(13) & ERR_ONLINE & Erl & ERR_INMODULE & Getthreadinfo(1)
+	End Sub
+	
+	'Delete (Destructor)
+	'-------------------------------------------------------
+	Public Sub Delete()
+		'Child classes will handle their own clean-up.
+	End Sub
+	
+	'Write
+	'-------------------------------------------------------
+	'The Write method should be common to all FlowDocument sub-classes, however
+	'because LotusScript does not allow for method overloading and because that would be
+	'required since each sub-class requires different forms of input, it is being
+	'implimented in this fashion were Write will call the appropiate write method for
+	'each log document type.
+	Public Function Write(msg As String, logType As Integer, logLevel As Integer) As Boolean
+		On Error Goto ErrHandler
+		
+		Select Case Me.m_logType
+		Case LOG_TO_DOC
+			Let Me.Write = Me.WriteToDoc(msg, logType, logLevel)
+		Case LOG_TO_MAIL
+			Let Me.Write = Me.WriteToDoc(msg, logType, logLevel)
+		Case LOG_TO_FILE
+			Let Me.Write = Me.WriteToFile(msg)
+		Case LOG_TO_CONSOLE
+			Let Me.Write = Me.WriteToConsole(msg)
+		Case LOG_TO_MSGBOX
+			Let Me.Write = Me.WriteToMsgbox(msg)
+		End Select
+		
+		Exit Function
+		
+ErrHandler:
+		Error Err, Error & Chr$(13) & ERR_ONLINE & Erl & ERR_INMODULE & Getthreadinfo(1)
+	End Function
+	
+	Public Sub Close()
+	End Sub
+	
+	Public Function Save(checkSize As Boolean) As Boolean
+	End Function
+	
+'=======================================================
+'PRIVATE METHODS
+'=======================================================
+	
+	'************** Added in Beta 4 **************
+	'InitCache
+	'-------------------------------------------------------
+	Private Sub InitCache
+		On Error Goto ErrHandler
+		
+		If CacheDepthAllowed = 0 Then
+			Redim Me.m_cache(0)
+		Else
+			Redim Me.m_cache(CacheDepthAllowed - 1)	'Subtract one because cache array will start at 0
+		End If			
+		Let Me.m_cacheDepth = 0
+		Let Me.m_cacheIsAlive = True
+		
+		Exit Sub
+		
+ErrHandler:
+		Error Err, Error & Chr$(13) & ERR_ONLINE & Erl & ERR_INMODULE & Getthreadinfo(1)		
+	End Sub
+	
+	'************** Added in Beta 4 **************
+	'WriteToCache
+	'-------------------------------------------------------
+	'Use this method to write to the log cache.
+	'
+	'SYNTAX
+	'Call WriteToCache(msg, type, level)
+	'
+	'PARAMETER
+	'msg
+	'	String.  The logging message to be cached and later written to the log document.
+	
+	'type
+	'	Integer.  Designates the type of message being logged.
+	'
+	'	LEGAL VALUES
+	'		LOG_TYPE_EVENT (0)
+	'		LOG_TYPE_ERROR (1)
+	'
+	'level
+	'	Integer.  Designates the messages logging level.
+	'
+	'	LEGAL VALUES
+	'		LOG_LEVEL_MINIMAL	(1)
+	'		LOG_LEVEL_NORMAL	(2)
+	'		LOG_LEVEL_VERBOSE	(3)
+	'		LOG_LEVEL_DEBUG	(4)	
+	'	
+	'RETURN VALUE
+	'	Nothing.
+	'-------------------------------------------------------
+	Private Sub WriteToCache(msgText As String, msgType As Integer, msgLevel As Integer, msgTime As String)
+		On Error Goto ErrHandler
+		
+		If Not(Me.m_cacheIsAlive) Then Call Me.InitCache
+		Let Me.m_cache(Me.m_cacheDepth).logTime = msgTime
+		Let Me.m_cache(Me.m_cacheDepth).logText = msgText
+		Let Me.m_cache(Me.m_cacheDepth).logLevel = msgLevel
+		Let Me.m_cache(Me.m_cacheDepth).logType = msgType
+		Let Me.m_cache(Me.m_cacheDepth).isNew = True
+		
+		If Me.m_cacheDepth >= (Me.m_cacheDepthAllowed - 1) Then	'We subtract 1 from cache depth because the cache array starts at 0 not at 1.
+			Call Me.FlushCache(True)
+			Let Me.m_cacheDepth = 0
+		Else
+			Let Me.m_cacheDepth = Me.m_cacheDepth + 1	
+		End If
+		
+		Exit Sub
+		
+ErrHandler:
+		Error Err, Error & Chr$(13) & ERR_ONLINE & Erl & ERR_INMODULE & Getthreadinfo(1)		
+	End Sub
+	
+	'************** Added in Beta 4 **************
+	Private Sub FlushCache(saveDocument As Boolean)
+	End Sub
+	
+	Private Function WriteToDoc(msg As String, logType As Integer, logLevel As Integer) As Boolean
+	End Function
+	
+	Private Function WriteToFile(msg As String) As Boolean
+	End Function
+	
+	Private Function WriteToConsole(msg As String) As Boolean
+	End Function
+	
+	Private Function WriteToMsgbox(msg As String) As Boolean
+	End Function
+	
+'=======================================================
+'PUBLIC PROPERTIES
+'=======================================================
+	
+	'************** Added in Beta 4 **************
+	Public Property Set CacheDepthAllowed As Integer
+		Let Me.m_cacheDepthAllowed = CacheDepthAllowed
+	End Property
+	
+	'************** Added in Beta 4 **************
+	Public Property Get CacheDepthAllowed As Integer
+		Let CacheDepthAllowed = Me.m_cacheDepthAllowed
+	End Property
+	
+	Public Property Get ErrorCount As Integer
+		Let ErrorCount = Me.m_errCount
+	End Property
+	
+	Public Property Set ErrorCount As Integer
+		Let Me.m_errCount = ErrorCount
+	End Property
+	
+	Public Property Get Size As Long
+	End Property
+	
+	Public Property Set Form As String
+	End Property
+	
+	Public Property Get Form As String
+	End Property
+	
+	Public Property Set ViewIcon As Integer
+	End Property
+	
+	Public Property Get ViewIcon As Integer
+	End Property
+	
+	Public Property Set BodyField As String
+	End Property
+	
+	Public Property Get BodyField As String
+	End Property
+	
+	Public Property Set LogStyleMinimal As NotesRichTextStyle
+	End Property
+	
+	Public Property Get LogStyleMinimal As NotesRichTextStyle
+	End Property
+	
+	Public Property Set LogStyleNormal As NotesRichTextStyle
+	End Property
+	
+	Public Property Get LogStyleNormal As NotesRichTextStyle
+	End Property
+	
+	Public Property Set LogStyleVerbose As NotesRichTextStyle
+	End Property
+	
+	Public Property Get LogStyleVerbose As NotesRichTextStyle
+	End Property
+	
+	Public Property Set LogStyleDebug As NotesRichTextStyle
+	End Property
+	
+	Public Property Get LogStyleDebug As NotesRichTextStyle
+	End Property
+	
+	Public Property Set LogStyleTime As NotesRichTextStyle
+	End Property
+	
+	Public Property Get LogStyleTime As NotesRichTextStyle
+	End Property
+	
+	Public Property Set MaxLogDocSize As Long
+	End Property
+	
+	Public Property Get MaxLogDocSize As Long
+	End Property
+	
+	Public Property Set AttachFormOnSend As Boolean
+	End Property
+	
+	Public Property Get AttachFormOnSend As Boolean
+	End Property
+	
+	Public Property Set Subject As String
+	End Property
+	
+	Public Property Get Subject As String
+	End Property
+	
+	Public Property Set SendTo As String
+	End Property
+	
+	Public Property Get SendTo As String
+	End Property
+	
+	Public Property Set CopyTo As String
+	End Property
+	
+	Public Property Get CopyTo As String
+	End Property
+	
+	Public Property Set BlindCopyTo As String
+	End Property
+	
+	Public Property Get BlindCopyTo As String
+	End Property
+	
+	Public Property Set Important As Boolean
+	End Property
+	
+	Public Property Get Important As Boolean
+	End Property
+	
+	Public Property Set DisplayAgentName As Boolean
+	End Property
+	
+	Public Property Get DisplayAgentName As Boolean
+	End Property
+	
+	Public Property Set File As String
+	End Property
+	
+	Public Property Get File As String
+	End Property
+	
+	Public Property Set Icon As Integer
+	End Property
+	
+	Public Property Get Icon As Integer
+	End Property
+	
+	Public Property Set Buttons As Integer
+	End Property
+	
+	Public Property Get Buttons As Integer
+	End Property
+	
+	Public Property Set DefaultButton As Integer
+	End Property
+	
+	Public Property Get DefaultButton As Integer
+	End Property
+	
+	Public Property Set Mode As Integer
+	End Property
+	
+	Public Property Get Mode As Integer
+	End Property
+	
+	Public Property Set AppName As String
+		Let Me.m_appName = AppName
+	End Property
+	
+	Public Property Set AppVersion As String
+		Let Me.m_appVersion = appVersion
+	End Property
+	
+	Public Property Set ContinueText As String
+	End Property
+	
+	Public Property Get ContinueText As String
+	End Property
+End Class
+
+'********************************************************************************************
+'FLOW RICH-TEXT DOCUMENT CLASS
+'********************************************************************************************
+Public Class FlowRichTextDocument As FlowDocument	
+	'Declarations
+	'-------------------------------------------------------
+	Private m_doc As NotesDocument
+	Private m_bodyField As String
+	Private m_body As NotesRichTextItem
+	Private m_rtStyle As NotesRichTextStyle
+	Private m_rtStyleMin As NotesRichTextStyle
+	Private m_rtStyleNorm As NotesRichTextStyle
+	Private m_rtStyleVerb As NotesRichTextStyle
+	Private m_rtStyleDbg As NotesRichTextStyle
+	Private m_rtStyleErr As NotesRichTextStyle
+	Private m_rtStyleTime As NotesRichTextStyle
+	Private m_formName As String
+	Private m_maxDocSize As Long
+	Private m_isLogEmpty As Boolean			'************** Added in Beta 4 **************
+	Private m_continueText As String
+	
+'=======================================================
+'PUBLIC METHODS
+'=======================================================
+	
+	'New (Constructor)
+	'-------------------------------------------------------
+	Public Sub New(db As NotesDatabase)
+		On Error Goto ErrHandler
+		
+		Let Me.m_logType = LOG_TO_DOC
+		Let Me.m_isLogEmpty = True			'************** Added in Beta 4 **************
+		
+		'Instantiations
+		Set Me.m_rtStyle = Me.m_session.CreateRichTextStyle
+		
+		'Set defaults
+		Let Me.m_formName = LOG_FORM_TYPE
+		Let Me.m_bodyField = LOG_BODY_FIELD
+		Let Me.MaxLogDocSize = LOG_DOC_MAX_SIZE
+		Call Me.DefaultMinRTStyle
+		Call Me.DefaultNormRTStyle
+		Call Me.DefaultVerbRTStyle
+		Call Me.DefaultDbgRTStyle
+		Call Me.DefaultErrRTStyle
+		Call Me.DefaultTimeRTStyle
+		
+		'Create the new document
+		Call Me.Create
+		
+		Exit Sub
+		
+ErrHandler:
+		Error Err, Error & Chr$(13) & ERR_ONLINE & Erl & ERR_INMODULE & Getthreadinfo(1)
+	End Sub
+	
+	'Delete (Destructor)
+	'-------------------------------------------------------
+	Public Sub Delete()
+		If Not(Me.m_doc Is Nothing) Then Call Me.Close
+	End Sub
+	
+	'Close
+	'-------------------------------------------------------
+	Public Sub Close()
+		On Error Goto ErrHandler
+		
+		If Me.m_doc Is Nothing Then Exit Sub
+		Call Me.FlushCache(False)						'Final flush; do not force doc to be saved or we get into infinite loop	************** Added in Beta 4 **************
+		
+		If Not(Me.m_isLogEmpty) Then
+			Call Me.EndHeader							'Complete log header
+			Call Me.m_doc.ComputeWithForm(True, True)
+			Call Me.Save(False)
+		Else
+			Call Me.m_doc.Remove(True)					'Do not save document if nothing has been logged
+		End If
+		
+		Set Me.m_doc = Nothing							'Remove document from memory
+		Let Me.m_isLogEmpty = True
+		
+		Exit Sub
+		
+ErrHandler:
+		Error Err, Error & Chr$(13) & ERR_ONLINE & Erl & ERR_INMODULE & Getthreadinfo(1)
+	End Sub
+	
+	'Save
+	'-------------------------------------------------------
+	Public Function Save(checkSize As Boolean) As Boolean
+		On Error Goto ErrHandler
+		
+		Let Save = Me.m_doc.Save(False, True)
+		
+		If checkSize Then
+			If Me.Size >= Me.m_maxDocSize Then
+				Call Me.Close
+				Call Me.Create
+			End If
+		End If
+		
+		Exit Function
+		
+ErrHandler:
+		Error Err, Error & Chr$(13) & ERR_ONLINE & Erl & ERR_INMODULE & Getthreadinfo(1)
+	End Function
+	
+'=======================================================
+'PRIVATE METHODS
+'=======================================================
+	
+	'WriteToDoc	
+	'-------------------------------------------------------
+	'Private.  Writes text to the document.
+	'
+	'SYNTAX
+	'	CALL WriteToDoc(msg, type, level)
+	'
+	'PARAMETERS
+	'	msg.
+	'		String.  The text to be written.
+	'
+	'	type
+	'		Integer.  The log type.
+	'
+	'		Legal Values:
+	'			LOG_TYPE_EVENT
+	'			LOG_TYPE_ERROR
+	'
+	'	level
+	'		Integer.  The logging level.
+	'
+	'		Legal Values:
+	'			LOG_LEVEL_MINIMAL
+	'			LOG_LEVEL_NORMAL
+	'			LOG_LEVEL_VERBOSE
+	'			LOG_LEVEL_DEBUG
+	'
+	'RETURN VALUE
+	'	Boolean.
+	'-------------------------------------------------------
+	Private Function WriteToDoc(msg As String, logType As Integer, logLevel As Integer) As Boolean
+		On Error Goto ErrHandler
+		
+		If Me.m_doc Is Nothing Then Call Me.Create
+		If logType < LOG_TYPE_EVENT Or logType > LOG_TYPE_ERROR Then logType = LOG_TYPE_EVENT			'Default to event type if we are passed an incorrect value
+		If logLevel < LOG_LEVEL_MINIMAL Or logLevel > LOG_LEVEL_DEBUG Then logLevel = LOG_LEVEL_MINIMAL	'Use default logging level if we are passed an incorrect value
+		
+		Call Me.WriteToCache(msg, logType, logLevel, GetTime)		'************** Added in Beta 4 **************
+		Let WriteToDoc = True
+		
+		Exit Function
+		
+ErrHandler:
+		Error Err, Error & Chr$(13) & ERR_ONLINE & Erl & ERR_INMODULE & Getthreadinfo(1)
+	End Function
+	
+	'************** Added in Beta 4 **************
+	'FlushCache
+	'-------------------------------------------------------
+	'Use this method to write all cached events and errors on the cache to log documents.
+	'
+	'SYNTAX
+	'Call FlushCache
+	'
+	'PARAMETER
+	'saveDocument
+	'	Boolean. Set to TRUE to force a save of the document after the flush.
+	'	
+	'RETURN VALUE
+	'	Nothing.
+	'-------------------------------------------------------	
+	Private Sub FlushCache(saveDocument As Boolean)
+		On Error Goto ErrHandler
+		
+		Forall msg In Me.m_cache
+			If msg.isNew Then
+				Call Me.SetLogStyle(LOG_TYPE_TIME, 0)
+				Call Me.m_body.AppendStyle(Me.m_rtStyle)
+				Call Me.m_body.AppendText(msg.logTime & LOG_TIME_SPACER)
+				Call Me.SetLogStyle(msg.logType, msg.logLevel)
+				Call Me.m_body.AppendStyle(Me.m_rtStyle)
+				Call Me.m_body.AppendText(msg.logText)
+				Call Me.m_body.AddNewline(1)
+				Call Me.m_body.Compact						'************* Suggested by Kevin Pettit *************************
+				Let Me.m_isLogEmpty = False
+				Let msg.isNew = False
+			End If
+		End Forall
+		
+		If saveDocument Then Call Me.Save(True)
+		
+		Exit Sub
+		
+ErrHandler:
+		Error Err, Error & Chr$(13) & ERR_ONLINE & Erl & ERR_INMODULE & Getthreadinfo(1)		
+	End Sub
+	
+	'Create
+	'-------------------------------------------------------
+	'Private.  Creates a new log document.
+	'
+	'SYNTAX
+	'	CALL Create
+	'
+	'PARAMETERS
+	'	None.
+	'
+	'RETURN VALUE
+	'	Nothing.
+	'-------------------------------------------------------
+	Private Sub Create()
+		On Error Goto ErrHandler
+		
+		Set Me.m_doc = New NotesDocument(Me.m_db)		
+		Call Me.StartHeader
+		
+		'Setup body field
+		With Me.m_doc
+			.Form = Me.m_formName
+			Set Me.m_body = .CreateRichTextItem(Me.m_bodyField)
+			Call Me.Save(False)		
+		End With
+		
+		If Me.ContinueText <> "" Then
+			Call Me.SetLogStyle(LOG_TYPE_TIME, 0)
+			Call Me.m_body.AppendStyle(Me.m_rtStyle)
+			Call Me.m_body.AppendText(Me.ContinueText)
+			Call Me.m_body.AddNewline(1)
+			Call Me.m_body.Compact
+		End If
+		
+		Let Me.m_errCount = 0
+		
+		Exit Sub
+		
+ErrHandler:
+		Error Err, Error & Chr$(13) & ERR_ONLINE & Erl & ERR_INMODULE & Getthreadinfo(1)
+	End Sub
+	
+	'StartHeader
+	'-------------------------------------------------------
+	'Private.  Generates the start time/date headers for a log document.
+	'
+	'SYNTAX
+	'	CALL StartHeader()
+	'
+	'PARAMETERS
+	'	None.
+	'
+	'RETURN VALUE
+	'	Nothing.
+	'-------------------------------------------------------
+	Private Sub StartHeader()
+		On Error Goto ErrHandler
+		Dim dat As New NotesDateTime(Today)
+		Call dat.SetNow
+		Dim docDate As New NotesItem(Me.m_doc, "StartDate", dat)	'************* Suggested by Chris Hudson ************* ************** Added in Beta 4 **************
+		
+		With Me.m_doc
+			.ServerName = Me.m_serverName
+			.Agent = Me.m_agentName
+			.LogEngineVersion = LOG_NAME & " " & VERSION_INDICATOR & LOG_MAJOR_VER & VERSION_DELIMITER & LOG_MINOR_VER
+			.AppName = Me.m_appName
+			.AppVersion = Me.m_appVersion
+		End With
+		
+		Exit Sub
+		
+ErrHandler:
+		Error Err, Error & Chr$(13) & ERR_ONLINE & Erl & ERR_INMODULE & Getthreadinfo(1)
+	End Sub
+	
+	'EndHeader
+	'-------------------------------------------------------
+	'Private.  Generates the end time/date headers for a log document.
+	'
+	'SYNTAX
+	'	CALL EndHeader()
+	'
+	'PARAMETERS
+	'	None.
+	'
+	'RETURN VALUE
+	'	Nothing.
+	'-------------------------------------------------------
+	Private Sub EndHeader()
+		On Error Goto ErrHandler
+		On Error Goto ErrHandler
+		Dim dat As New NotesDateTime(GetDate & " " & GetTime)
+		Dim docDate As New NotesItem(Me.m_doc, "EndDate", dat)		'************* Suggested by Chris Hudson ************* ************** Added in Beta 4 **************
+		
+		With Me.m_doc
+			'This is done a second time in case the AppName or AppVersion was set/modified
+			'after the log was created
+			.AppName = Me.m_appName
+			.AppVersion = Me.m_appVersion
+			
+			'Write out error count
+			.ErrorCount = Me.m_errCount
+			If Me.m_errCount = 1 Then
+				.ErrorText = ERROR_TXT_SINGULAR
+			Else
+				.ErrorText = ERROR_TXT_PLURAL
+			End If
+			
+			Dim legend As NotesRichTextItem
+			Set legend = Me.m_doc.CreateRichTextItem(LOG_LEGEND_FIELD)
+			
+			'Write out the legend
+			Call Me.SetLogStyle(LOG_TYPE_EVENT, LOG_LEVEL_MINIMAL)
+			Call legend.AppendStyle(Me.m_rtStyle)
+			Call legend.AppendText(MINIMAL_TXT)
+			Call legend.AddNewline(1)
+			
+			Call Me.SetLogStyle(LOG_TYPE_EVENT, LOG_LEVEL_NORMAL)
+			Call legend.AppendStyle(Me.m_rtStyle)
+			Call legend.AppendText(NORMAL_TXT)
+			Call legend.AddNewline(1)
+			
+			Call Me.SetLogStyle(LOG_TYPE_EVENT, LOG_LEVEL_VERBOSE)	
+			Call legend.AppendStyle(Me.m_rtStyle)
+			Call legend.AppendText(VERBOSE_TXT)
+			Call legend.AddNewline(1)
+			
+			Call Me.SetLogStyle(LOG_TYPE_EVENT, LOG_LEVEL_DEBUG)
+			Call legend.AppendStyle(Me.m_rtStyle)
+			Call legend.AppendText(DEBUG_TXT)
+			Call legend.AddNewline(1)
+			
+			Call Me.SetLogStyle(LOG_TYPE_ERROR, 0)
+			Call legend.AppendStyle(Me.m_rtStyle)
+			Call legend.AppendText(ERROR_TXT)
+			
+			Call legend.Compact
+		End With
+		
+		Exit Sub
+		
+ErrHandler:
+		Error Err, Error & Chr$(13) & ERR_ONLINE & Erl & ERR_INMODULE & Getthreadinfo(1)
+	End Sub	
+	
+	'SetLogStyle
+	'-------------------------------------------------------
+	'Private.  Sets the rich-text style to be used for text written to
+	'the log document.
+	'
+	'SYNTAX
+	'	CALL SetLogStyle(logType%, logLevel%)
+	'
+	'PARAMETERS
+	'	logType
+	'		Integer.  The logging type of the text being written to the
+	'		log document.
+	'
+	'		Legal values:
+	'		- LOG_TYPE_EVENT (0)
+	'		- LOG_TYPE_ERROR (1)
+	'		- LOG_TYPE_TIME (9)
+	'
+	'	logLevel
+	'		Integer.  The logging level of the text that will be written
+	'		to the log.  This will determine which rich-text style to be
+	'		used.  Passing a 0 for LOG_TYPE_EVENT will use the default rich-
+	'		text style.  Passing any value other than 0 for LOG_TYPE_ERROR
+	'		or LOG_TYPE_TIME will be ignored because there is only one rich-
+	'		text style for these two log types.
+	'
+	'RETURN VALUE
+	'	Nothing.
+	'-------------------------------------------------------
+	Private Sub SetLogStyle(logType As Integer, logLevel As Integer)
+		On Error Goto ErrHandler
+		
+		Select Case logType
+			
+		Case LOG_TYPE_EVENT
+			'Set rich text for event
+			Select Case logLevel
+			Case LOG_LEVEL_MINIMAL
+				Set Me.m_rtStyle = Me.LogStyleMinimal
+			Case LOG_LEVEL_NORMAL
+				Set Me.m_rtStyle = Me.LogStyleNormal
+			Case LOG_LEVEL_VERBOSE
+				Set Me.m_rtStyle = Me.LogStyleVerbose
+			Case LOG_LEVEL_DEBUG
+				Set Me.m_rtStyle = Me.LogStyleDebug
+			Case Else
+				Set Me.m_rtStyle = Me.LogStyleNormal				
+			End Select
+			
+		Case LOG_TYPE_ERROR
+			'Set rich text for error
+			Set m_rtStyle = Me.m_rtStyleErr
+			
+		Case LOG_TYPE_TIME
+			'Set rich text for time
+			Set m_rtStyle = Me.LogStyleTime
+			
+		End Select
+		
+		Exit Sub
+		
+ErrHandler:
+		Error Err, Error & Chr$(13) & ERR_ONLINE & Erl & ERR_INMODULE & Getthreadinfo(1)
+	End Sub
+	
+	'DefaultMinRTStyle
+	'-------------------------------------------------------
+	'Private.  Sets the default rich-text style for the minimal
+	'log event type.
+	'
+	'SYNTAX
+	'	CALL DefaultMinRTStyle
+	'
+	'PARAMETERS
+	'	None.
+	'
+	'RETURN VALUE
+	'	Nothing.
+	'-------------------------------------------------------
+	Private Sub DefaultMinRTStyle()
+		On Error Goto ErrHandler
+		
+		Set Me.LogStyleMinimal = Me.m_session.CreateRichTextStyle
+		Let Me.LogStyleMinimal.Bold = False
+		Let Me.LogStyleMinimal.Italic = False
+		Let Me.LogStyleMinimal.Strikethrough = False
+		Let Me.LogStyleMinimal.Underline = False
+		Let Me.LogStyleMinimal.Effects = EFFECTS_NONE
+		Let Me.LogStyleMinimal.NotesFont = FONT_HELV
+		Let Me.LogStyleMinimal.FontSize = 9
+		Let Me.LogStyleMinimal.NotesColor = COLOR_BLACK
+		
+		Exit Sub
+		
+ErrHandler:
+		Error Err, Error & Chr$(13) & ERR_ONLINE & Erl & ERR_INMODULE & Getthreadinfo(1)
+	End Sub
+	
+	'DefaultNormRTStyle
+	'-------------------------------------------------------
+	'Private.  Sets the default rich-text style for the normal
+	'log event type.
+	'
+	'SYNTAX
+	'	CALL DefaultNormRTStyle
+	'
+	'PARAMETERS
+	'	None.
+	'
+	'RETURN VALUE
+	'	Nothing.
+	'-------------------------------------------------------
+	Private Sub DefaultNormRTStyle()
+		On Error Goto ErrHandler
+		
+		Set Me.LogStyleNormal = Me.m_session.CreateRichTextStyle
+		Let Me.LogStyleNormal.Bold = False
+		Let Me.LogStyleNormal.Italic = False
+		Let Me.LogStyleNormal.Strikethrough = False
+		Let Me.LogStyleNormal.Underline = False
+		Let Me.LogStyleNormal.Effects = EFFECTS_NONE
+		Let Me.LogStyleNormal.NotesFont = FONT_HELV
+		Let Me.LogStyleNormal.FontSize = 9
+		Let Me.LogStyleNormal.NotesColor = COLOR_DARK_BLUE
+		
+		Exit Sub
+		
+ErrHandler:
+		Error Err, Error & Chr$(13) & ERR_ONLINE & Erl & ERR_INMODULE & Getthreadinfo(1)
+	End Sub
+	
+	'DefaultVerbRTStyle
+	'-------------------------------------------------------
+	'Private.  Sets the default rich-text style for the verbose
+	'log event type.
+	'
+	'SYNTAX
+	'	CALL DefaultVerbRTStyle
+	'
+	'PARAMETERS
+	'	None.
+	'
+	'RETURN VALUE
+	'	Nothing.
+	'-------------------------------------------------------
+	Private Sub DefaultVerbRTStyle()
+		On Error Goto ErrHandler
+		
+		Set Me.LogStyleVerbose = Me.m_session.CreateRichTextStyle
+		Let Me.LogStyleVerbose.Bold = False
+		Let Me.LogStyleVerbose.Italic = False
+		Let Me.LogStyleVerbose.Strikethrough = False
+		Let Me.LogStyleVerbose.Underline = False
+		Let Me.LogStyleVerbose.Effects = EFFECTS_NONE
+		Let Me.LogStyleVerbose.NotesFont = FONT_HELV
+		Let Me.LogStyleVerbose.FontSize = 9
+		Let Me.LogStyleVerbose.NotesColor = COLOR_DARK_MAGENTA
+		
+		Exit Sub
+		
+ErrHandler:
+		Error Err, Error & Chr$(13) & ERR_ONLINE & Erl & ERR_INMODULE & Getthreadinfo(1)
+	End Sub
+	
+	'DefaultDbgRTStyle
+	'-------------------------------------------------------
+	'Private.  Sets the default rich-text style for the debug
+	'log event type.
+	'
+	'SYNTAX
+	'	CALL DefaultDbgRTStyle
+	'
+	'PARAMETERS
+	'	None.
+	'
+	'RETURN VALUE
+	'	Nothing.
+	'-------------------------------------------------------
+	Private Sub DefaultDbgRTStyle()
+		On Error Goto ErrHandler
+		
+		Set Me.LogStyleDebug = Me.m_session.CreateRichTextStyle
+		Let Me.LogStyleDebug.Bold = False
+		Let Me.LogStyleDebug.Italic = False
+		Let Me.LogStyleDebug.Strikethrough = False
+		Let Me.LogStyleDebug.Underline = False
+		Let Me.LogStyleDebug.Effects = EFFECTS_NONE
+		Let Me.LogStyleDebug.NotesFont = FONT_HELV
+		Let Me.LogStyleDebug.FontSize = 9
+		Let Me.LogStyleDebug.NotesColor = COLOR_DARK_RED
+		
+		Exit Sub
+		
+ErrHandler:
+		Error Err, Error & Chr$(13) & ERR_ONLINE & Erl & ERR_INMODULE & Getthreadinfo(1)
+	End Sub
+	
+	'DefaultErrRTStyle
+	'-------------------------------------------------------
+	'Private.  Sets the default rich-text style for the error
+	'log type.
+	'
+	'SYNTAX
+	'	CALL DefaultErrRTStyle
+	'
+	'PARAMETERS
+	'	None.
+	'
+	'RETURN VALUE
+	'	Nothing.
+	'-------------------------------------------------------
+	Private Sub DefaultErrRTStyle()
+		On Error Goto ErrHandler
+		
+		Set Me.m_rtStyleErr = Me.m_session.CreateRichTextStyle
+		Let Me.m_rtStyleErr.Bold = False
+		Let Me.m_rtStyleErr.Italic = False
+		Let Me.m_rtStyleErr.Strikethrough = False
+		Let Me.m_rtStyleErr.Underline = False
+		Let Me.m_rtStyleErr.Effects = EFFECTS_NONE
+		Let Me.m_rtStyleErr.NotesFont = FONT_HELV
+		Let Me.m_rtStyleErr.FontSize = 9
+		Let Me.m_rtStyleErr.NotesColor = COLOR_RED
+		
+		Exit Sub
+		
+ErrHandler:
+		Error Err, Error & Chr$(13) & ERR_ONLINE & Erl & ERR_INMODULE & Getthreadinfo(1)
+	End Sub
+	
+	'DefaultTimeRTStyle
+	'-------------------------------------------------------
+	'Private.  Sets the default rich-text style for the time
+	'log type.
+	'
+	'SYNTAX
+	'	CALL DefaultTimeRTStyle
+	'
+	'PARAMETERS
+	'	None.
+	'
+	'RETURN VALUE
+	'	Nothing.
+	'-------------------------------------------------------
+	Private Sub DefaultTimeRTStyle()
+		On Error Goto ErrHandler
+		
+		Set Me.LogStyleTime = Me.m_session.CreateRichTextStyle
+		Let Me.LogStyleTime.Bold = False
+		Let Me.LogStyleTime.Italic = False
+		Let Me.LogStyleTime.Strikethrough = False
+		Let Me.LogStyleTime.Underline = False
+		Let Me.LogStyleTime.Effects = EFFECTS_NONE
+		Let Me.LogStyleTime.NotesFont = FONT_HELV
+		Let Me.LogStyleTime.FontSize = 9
+		Let Me.LogStyleTime.NotesColor = COLOR_BLACK
+		
+		Exit Sub
+		
+ErrHandler:
+		Error Err, Error & Chr$(13) & ERR_ONLINE & Erl & ERR_INMODULE & Getthreadinfo(1)
+	End Sub
+	
+'=======================================================
+'PUBLIC PROPERTIES
+'=======================================================
+	
+	'Size
+	'-------------------------------------------------------
+	Public Property Get Size As Long
+		On Error Goto ErrHandler
+		
+		Dim logSize As String
+		Let logSize = Me.m_body.GetUnformattedText
+		Let Size = Len(logSize)
+		
+		Exit Property
+		
+ErrHandler:
+		Error Err, Error & Chr$(13) & ERR_ONLINE & Erl & ERR_INMODULE & Getthreadinfo(1)
+	End Property
+	
+	'Form
+	'-------------------------------------------------------
+	Public Property Set Form As String
+		On Error Goto ErrHandler
+		
+		Let Me.m_formName = Form
+		If Not(Me.m_doc Is Nothing) Then Me.m_doc.Form = Form
+		
+		Exit Property
+		
+ErrHandler:
+		Error Err, Error & Chr$(13) & ERR_ONLINE & Erl & ERR_INMODULE & Getthreadinfo(1)
+	End Property
+	
+	Public Property Get Form As String
+		Let Form = Me.m_formName
+	End Property
+	
+	'BodyField
+	'-------------------------------------------------------
+	Public Property Set BodyField As String
+		On Error Goto ErrHandler
+		
+		Let Me.m_bodyField = BodyField
+		If Not(Me.m_body Is Nothing) Then Set Me.m_body = Me.m_doc.CreateRichTextItem(Me.m_bodyField)
+		
+		Exit Property
+		
+ErrHandler:
+		Error Err, Error & Chr$(13) & ERR_ONLINE & Erl & ERR_INMODULE & Getthreadinfo(1)
+	End Property
+	
+	Public Property Get BodyField As String
+		Let BodyField = Me.m_bodyField
+	End Property
+	
+	'LogStyleMinimal
+	'-------------------------------------------------------
+	Public Property Set LogStyleMinimal As NotesRichTextStyle
+		Set Me.m_rtStyleMin = LogStyleMinimal		
+	End Property
+	
+	Public Property Get LogStyleMinimal As NotesRichTextStyle
+		Set LogStyleMinimal = Me.m_rtStyleMin
+	End Property
+	
+	'LogStyleNormal
+	'-------------------------------------------------------
+	Public Property Set LogStyleNormal As NotesRichTextStyle
+		Set Me.m_rtStyleNorm = LogStyleNormal		
+	End Property
+	
+	Public Property Get LogStyleNormal As NotesRichTextStyle
+		Set LogStyleNormal = Me.m_rtStyleNorm
+	End Property
+	
+	'LogStyleVerbose
+	'-------------------------------------------------------
+	Public Property Set LogStyleVerbose As NotesRichTextStyle
+		Set Me.m_rtStyleVerb = LogStyleVerbose		
+	End Property	
+	
+	Public Property Get LogStyleVerbose As NotesRichTextStyle
+		Set LogStyleVerbose = Me.m_rtStyleVerb
+	End Property	
+	
+	'LogStyleDebug
+	'-------------------------------------------------------
+	Public Property Set LogStyleDebug As NotesRichTextStyle
+		Set Me.m_rtStyleDbg = LogStyleDebug		
+	End Property
+	
+	Public Property Get LogStyleDebug As NotesRichTextStyle
+		Set LogStyleDebug = Me.m_rtStyleDbg
+	End Property
+	
+	'LogStyleTime
+	'-------------------------------------------------------
+	Public Property Set LogStyleTime As NotesRichTextStyle
+		Set Me.m_rtStyleTime = LogStyleTime		
+	End Property
+	
+	Public Property Get LogStyleTime As NotesRichTextStyle
+		Set LogStyleTime = Me.m_rtStyleTime
+	End Property
+	
+	'MaxLogDocSize
+	'-------------------------------------------------------
+	Public Property Set MaxLogDocSize As Long
+		On Error Goto ErrHandler
+		
+		If MaxLogDocSize <> 0 Then
+			Let Me.m_maxDocSize = MaxLogDocSize
+		Else
+			Let Me.m_maxDocSize = LOG_DOC_MAX_SIZE
+		End If
+		
+		Exit Property
+		
+ErrHandler:
+		Error Err, Error & Chr$(13) & ERR_ONLINE & Erl & ERR_INMODULE & Getthreadinfo(1)
+	End Property
+	
+	Public Property Get MaxLogDocSize As Long
+		Let MaxLogDocSize = Me.m_maxDocSize
+	End Property
+	
+	'ViewIcon
+	'-------------------------------------------------------
+	Public Property Set ViewIcon As Integer
+		If Not(Me.m_doc Is Nothing) Then Call Me.m_doc.ReplaceItemValue(LOG_VIEWICON_FIELD, ViewIcon)
+	End Property
+	
+	Public Property Get ViewIcon As Integer
+		On Error Goto ErrHandler
+		
+		If Not(Me.m_doc Is Nothing) Then
+			Let ViewIcon = Me.m_doc.GetItemValue(LOG_VIEWICON_FIELD)(0)
+		Else
+			Let ViewIcon = 0
+		End If
+		
+		Exit Property
+		
+ErrHandler:
+		Error Err, Error & Chr$(13) & ERR_ONLINE & Erl & ERR_INMODULE & Getthreadinfo(1)
+	End Property
+	
+	'ContinueText
+	'-------------------------------------------------------
+	Public Property Set ContinueText As String
+		Let Me.m_continueText = ContinueText
+	End Property
+	
+	Public Property Get ContinueText As String
+		Let ContinueText = Me.m_continueText
+	End Property
+	
+End Class
+
+'********************************************************************************************
+'FLOW MAIL DOCUMENT CLASS
+'********************************************************************************************
+Public Class FlowMailDocument As FlowRichTextDocument
+	'Declarations
+	'-------------------------------------------------------
+	Private m_attachForm As Boolean
+	Private m_subject As String
+	Private m_sendTo As String
+	Private m_copyTo As String
+	Private m_blindCopyTo As String
+	Private m_important As Boolean
+	
+'=======================================================
+'PUBLIC METHODS
+'=======================================================
+	
+	'New (Constructor)
+	'-------------------------------------------------------
+	Public Sub New(db As NotesDatabase)
+		On Error Goto ErrHandler
+		
+		'Note: the m_doc object is instantiated in the parent class.
+		Let Me.m_logType = LOG_TO_MAIL
+		
+		'Set defaults
+		Let Me.Form = LOG_MAIL_FORM_TYPE		'Overrides value set in parent class
+		Let Me.AttachFormOnSend = False
+		Let Me.Subject = LOG_MAIL_SUBJECT
+		Call Me.Save(False)
+		
+		Exit Sub
+		
+ErrHandler:
+		Error Err, Error & Chr$(13) & ERR_ONLINE & Erl & ERR_INMODULE & Getthreadinfo(1)
+	End Sub
+	
+	'Delete (Destructor)
+	'-------------------------------------------------------
+	Public Sub Delete()
+		'Parent class will handle clean-up.
+	End Sub
+	
+	'Close
+	'-------------------------------------------------------
+	Public Sub Close()
+		On Error Goto ErrHandler
+		
+		If Me.m_doc Is Nothing Then Exit Sub
+		Call Me.FlushCache(False)					'Final flush; do not force doc to be saved or we get into infinite loop  ************** Added in Beta 4 **************
+		
+		If Not(Me.m_isLogEmpty) Then
+			Call Me.EndHeader
+			Call Me.Save(False)
+			Call Me.m_doc.Send(Me.m_attachForm)
+		Else
+			Call Me.m_doc.Remove(True)				'Do not send document if nothing has been logged
+		End If
+		
+		Set Me.m_doc = Nothing						'Remove document from memory
+		Let Me.m_isLogEmpty = True
+		
+		Exit Sub
+		
+ErrHandler:
+		Error Err, Error & Chr$(13) & ERR_ONLINE & Erl & ERR_INMODULE & Getthreadinfo(1)
+	End Sub
+	
+'=======================================================
+'PRIVATE METHODS
+'=======================================================
+	
+	'Create
+	'-------------------------------------------------------
+	Private Sub Create()
+		On Error Goto ErrHandler
+		
+		Set Me.m_doc = New NotesDocument(Me.m_db)		
+		
+		With Me.m_doc
+			.Form = Me.m_formName
+			.Subject = Me.m_subject
+			Set Me.m_body = .CreateRichTextItem(Me.m_bodyField)
+			Call Me.StartHeader
+			Call Me.Save(False)
+		End With
+		
+		Exit Sub
+		
+ErrHandler:
+		Error Err, Error & Chr$(13) & ERR_ONLINE & Erl & ERR_INMODULE & Getthreadinfo(1)
+	End Sub
+	
+	'StartHeader
+	'-------------------------------------------------------
+	Private Sub StartHeader()
+		On Error Goto ErrHandler
+		
+		With Me.m_doc
+			Call Me.SetLogStyle(LOG_TYPE_TIME, 0)
+			Call Me.m_body.AppendStyle(Me.m_rtStyle)
+			Call Me.m_body.AppendText(Me.m_agentName & " (" & Me.m_serverName &")")	'************* Modified in Beta 3 *************************
+			Call Me.m_body.AddNewline(1)
+			Call Me.m_body.AppendText(GetDate & " " & GetTime)	'************* Modified in Beta 3 *************************
+			Call Me.m_body.AddNewline(2)
+		End With
+		
+		Exit Sub
+		
+ErrHandler:
+		Error Err, Error & Chr$(13) & ERR_ONLINE & Erl & ERR_INMODULE & Getthreadinfo(1)
+	End Sub
+	
+	'EndHeader
+	'-------------------------------------------------------
+	Private Sub EndHeader()
+		'Technically this will append the current date/time to the end of the RT field and not to a "header"
+		On Error Goto ErrHandler
+		
+		With Me.m_doc
+			'Write out error count
+			Call Me.m_body.AddNewline(1)
+			Call Me.SetLogStyle(LOG_TYPE_EVENT, LOG_LEVEL_MINIMAL)
+			Call Me.m_body.AppendStyle(Me.m_rtStyle)
+			Call Me.m_body.AppendText(ERROR_COUNT_TXT & ": " & Me.m_errCount)	'************* Modified in Beta 3 *************************
+			
+			'The end header
+			Call Me.m_body.AddNewline(1)
+			Call Me.m_body.AddNewline(1)
+			Call Me.SetLogStyle(LOG_TYPE_TIME, 0)
+			Call Me.m_body.AppendStyle(Me.m_rtStyle)
+			Call Me.m_body.AppendText(GetDate & " " & GetTime)	'************* Modified in Beta 3 *************************
+			Call Me.m_body.AddNewline(1)
+			
+			'************* Added in Beta 3 *************************
+			If Me.m_appName <> "" And Me.m_appVersion <> "" Then
+				Call Me.m_body.AppendText(Me.m_appName & " " & VERSION_INDICATOR & Me.m_appVersion)
+				Call Me.m_body.AddNewline(1)
+			Elseif Me.m_appName <> "" And Me.m_appVersion = "" Then
+				Call Me.m_body.AppendText(Me.m_appName)
+				Call Me.m_body.AddNewline(1)
+			End If
+			'************* End addition *************************
+			
+			Call Me.m_body.AppendText(LOG_NAME & " " & VERSION_INDICATOR & LOG_MAJOR_VER & VERSION_DELIMITER & LOG_MINOR_VER)	'************* Modified in Beta 3 *************************
+		End With
+		
+		Exit Sub
+		
+ErrHandler:
+		Error Err, Error & Chr$(13) & ERR_ONLINE & Erl & ERR_INMODULE & Getthreadinfo(1)
+	End Sub
+	
+'=======================================================
+'PUBLIC PROPERTIES
+'=======================================================
+	
+	'AttachFormOnSend
+	'-------------------------------------------------------
+	Public Property Set AttachFormOnSend As Boolean
+		Let Me.m_attachForm = AttachFormOnSend
+	End Property
+	
+	Public Property Get AttachFormOnSend As Boolean
+		Let AttachFormOnSend = Me.m_attachForm
+	End Property
+	
+	'Subject
+	'-------------------------------------------------------
+	Public Property Set Subject As String
+		On Error Goto ErrHandler
+		
+		Let Me.m_subject = Subject
+		If Not(Me.m_doc Is Nothing) Then Call Me.m_doc.ReplaceItemValue(LOGMSG_SUBJECT_FIELD, Subject)		'************* Modified in Beta 3 *************************
+		Exit Property
+		
+ErrHandler:
+		Error Err, Error & Chr$(13) & ERR_ONLINE & Erl & ERR_INMODULE & Getthreadinfo(1)
+	End Property
+	
+	Public Property Get Subject As String
+		Let Subject = Me.m_subject
+	End Property
+	
+	'SendTo
+	'-------------------------------------------------------
+	Public Property Set SendTo As String
+		On Error Goto ErrHandler
+		
+		Let Me.m_sendTo = SendTo
+		If Not(Me.m_doc Is Nothing) Then Call Me.m_doc.ReplaceItemValue(LOGMSG_SENDTO_FIELD, SendTo)		'************* Modified in Beta 3 *************************
+		
+		Exit Property
+		
+ErrHandler:
+		Error Err, Error & Chr$(13) & ERR_ONLINE & Erl & ERR_INMODULE & Getthreadinfo(1)
+	End Property
+	
+	Public Property Get SendTo As String
+		Let SendTo = Me.m_sendTo
+	End Property
+	
+	'CopyTo
+	'-------------------------------------------------------
+	Public Property Set CopyTo As String
+		On Error Goto ErrHandler
+		
+		Let Me.m_copyTo = CopyTo
+		If Not(Me.m_doc Is Nothing) Then Call Me.m_doc.ReplaceItemValue(LOGMSG_COPYTO_FIELD, CopyTo)		'************* Modified in Beta 3 *************************
+		
+		Exit Property
+		
+ErrHandler:
+		Error Err, Error & Chr$(13) & ERR_ONLINE & Erl & ERR_INMODULE & Getthreadinfo(1)
+	End Property
+	
+	Public Property Get CopyTo As String
+		Let CopyTo = Me.m_copyTo
+	End Property
+	
+	'BlindCopyTo
+	'-------------------------------------------------------
+	Public Property Set BlindCopyTo As String
+		On Error Goto ErrHandler
+		
+		Let Me.m_blindCopyTo = BlindCopyTo
+		If Not(Me.m_doc Is Nothing) Then Call Me.m_doc.ReplaceItemValue(LOGMSG_BLINDCOPYTO_FIELD, BlindCopyTo)	'************* Modified in Beta 3 *************************
+		
+		Exit Property
+		
+ErrHandler:
+		Error Err, Error & Chr$(13) & ERR_ONLINE & Erl & ERR_INMODULE & Getthreadinfo(1)
+	End Property
+	
+	Public Property Get BlindCopyTo As String
+		Let BlindCopyTo = Me.m_blindCopyTo
+	End Property
+	
+	'Important
+	'-------------------------------------------------------
+	Public Property Set Imortant As Boolean
+		On Error Goto ErrHandler
+		
+		Let Me.m_important = Important
+		If Not(Me.m_doc Is Nothing) Then	'************* Modified in Beta 3 *************************
+			If Important Then
+				Call Me.m_doc.ReplaceItemValue(LOGMSG_IMPORTANCE_FIELD, "1")
+			Else
+				Call Me.m_doc.RemoveItem(LOGMSG_IMPORTANCE_FIELD)
+			End If
+		End If
+		
+		Exit Property
+		
+ErrHandler:
+		Error Err, Error & Chr$(13) & ERR_ONLINE & Erl & ERR_INMODULE & Getthreadinfo(1)
+	End Property
+	
+	Public Property Get Important As Boolean
+		Let Important = Me.m_important
+	End Property
+End Class
+
+'********************************************************************************************
+'FLOW CONSOLE CLASS
+'********************************************************************************************
+Public Class FlowConsole As FlowDocument
+	'Declarations
+	'-------------------------------------------------------
+	Private m_displayAgentName As Boolean
+	
+'=======================================================
+'PUBLIC METHODS
+'=======================================================
+	
+	'New (Constructor)
+	'-------------------------------------------------------
+	Public Sub New(db As NotesDatabase)
+		On Error Goto ErrHandler
+		
+		Let Me.m_logType = LOG_TO_CONSOLE
+		
+		'Set defaults
+		Let Me.m_displayAgentName = False
+		
+		Exit Sub
+		
+ErrHandler:
+		Error Err, Error & Chr$(13) & ERR_ONLINE & Erl & ERR_INMODULE & Getthreadinfo(1)
+	End Sub
+	
+'=======================================================
+'PRIVATE METHODS
+'=======================================================
+	
+	'WriteToConsole
+	'-------------------------------------------------------
+	Private Function WriteToConsole(msg As String) As Boolean
+		On Error Goto ErrHandler
+		
+		Select Case Me.m_displayAgentName
+		Case True
+			Print Me.m_agentName & " : " & msg
+		Case False
+			Print msg
+		End Select
+		Let Me.WriteToConsole = True
+		
+		Exit Function
+		
+ErrHandler:
+		Error Err, Error & Chr$(13) & ERR_ONLINE & Erl & ERR_INMODULE & Getthreadinfo(1)
+	End Function
+	
+'=======================================================
+'PUBLIC PROPERTIES
+'=======================================================
+	
+	'DisplayAgentName
+	'--------------------------------------------------------
+	Public Property Set DisplayAgentName As Boolean
+		Let Me.m_displayAgentName = DisplayAgentName
+	End Property
+	
+	Public Property Get DisplayAgentName As Boolean
+		Let DisplayAgentName = Me.m_displayAgentName
+	End Property
+End Class
+
+'********************************************************************************************
+'FLOW FILE CLASS
+'********************************************************************************************
+Public Class FlowFile As FlowDocument
+	'Declarations
+	'-------------------------------------------------------
+	Private m_fileNum As Integer
+	Private m_fileName As String
+	Private m_isLogEmpty As Boolean		'************** Added in Beta 4 **************
+	
+'=======================================================
+'PUBLIC METHODS
+'=======================================================
+	
+	'New (Constructor)
+	'-------------------------------------------------------
+	Public Sub New(db As NotesDatabase)
+		On Error Goto ErrHandler
+		
+		Let Me.m_logType = LOG_TO_FILE
+		Let Me.m_isLogEmpty = True		'************** Added in Beta 4 **************
+		
+		'Set defaults
+		Let Me.m_fileName = FILE_NAME
+		
+		Exit Sub
+		
+ErrHandler:
+		Error Err, Error & Chr$(13) & ERR_ONLINE & Erl & ERR_INMODULE & Getthreadinfo(1)
+	End Sub
+	
+	'Delete (Destructor)
+	'-------------------------------------------------------
+	Public Sub Delete()
+		Call Me.Close
+	End Sub
+	
+	'Create
+	'-------------------------------------------------------
+	Public Sub Create()
+		On Error Goto ErrHandler
+		
+		Let Me.m_fileNum = Freefile
+		Open Me.m_fileName For Output Access Write Lock Write As Me.m_fileNum
+		Call Me.StartHeader
+		
+		Exit Sub
+		
+ErrHandler:
+		Error Err, Error & Chr$(13) & ERR_ONLINE & Erl & ERR_INMODULE & Getthreadinfo(1)
+	End Sub
+	
+	'Close
+	'-------------------------------------------------------
+	Public Sub Close()
+		On Error Goto ErrHandler
+		
+		If Me.m_fileNum = 0 Then Exit Sub
+		Call Me.FlushCache(False)			'Final flush; do not force doc to be saved or we get into infinite loop ************** Added in Beta 4 **************
+		
+		If Not(Me.m_isLogEmpty) Then
+			Call Me.EndHeader
+			Close #Me.m_fileNum
+		Else
+			Close #Me.m_fileNum				'Do not save file if nothing has been logged
+			Kill Me.m_fileName
+		End If
+		
+		Let Me.m_fileNum = 0
+		Let Me.m_isLogEmpty = True
+		
+		Exit Sub
+		
+ErrHandler:
+		Error Err, Error & Chr$(13) & ERR_ONLINE & Erl & ERR_INMODULE & Getthreadinfo(1)
+	End Sub
+	
+'=======================================================
+'PRIVATE METHODS
+'=======================================================
+	
+	'WriteToFile
+	'-------------------------------------------------------
+	'Writes a message to the log file.
+	'
+	'SYNTAX
+	'	CALL WriteToFile(msg$)
+	'
+	'PARAMETERS
+	'	msg
+	'		String.  The message to be written to the log file.
+	'
+	'RETURN VALUE
+	'	Nothing.
+	'-------------------------------------------------------
+	Private Function WriteToFile(msg As String) As Boolean
+		On Error Goto ErrHandler
+		
+		If Me.m_fileNum = 0 Then Call Create
+		
+		Call Me.WriteToCache(msg, 0, 0, GetTime)	'************** Added in Beta 4 **************
+		Let Me.WriteToFile = True
+		
+		Exit Function
+		
+ErrHandler:
+		Error Err, Error & Chr$(13) & ERR_ONLINE & Erl & ERR_INMODULE & Getthreadinfo(1)
+	End Function
+	
+	'************** Added in Beta 4 **************
+	'FlushCache
+	'-------------------------------------------------------
+	'Use this method to write all cached events and errors on the cache to log documents.
+	'
+	'SYNTAX
+	'Call FlushCache
+	'
+	'PARAMETER
+	'saveDocument
+	'	Boolean. Set to TRUE to force a save of the document after the flush.
+	'		Note: this option is ignored in FlowFile class
+	'	
+	'RETURN VALUE
+	'	Nothing.
+	'-------------------------------------------------------	
+	Private Sub FlushCache(saveDocument As Boolean)
+		On Error Goto ErrHandler
+		
+		Forall msg In Me.m_cache
+			If msg.isNew Then
+				Print #Me.m_fileNum, msg.logTime & " " & msg.logText
+				Let msg.isNew = False
+			End If
+			Let Me.m_isLogEmpty = False
+		End Forall
+		
+		Exit Sub
+		
+ErrHandler:
+		Error Err, Error & Chr$(13) & ERR_ONLINE & Erl & ERR_INMODULE & Getthreadinfo(1)		
+	End Sub
+	
+	'StartHeader
+	'-------------------------------------------------------
+	Private Sub StartHeader()
+		On Error Goto ErrHandler
+		
+		If Me.m_fileNum = 0 Then Exit Sub
+		
+		Print #Me.m_fileNum, Me.m_agentName & " (" & Me.m_serverName & ")"	'************* Modified in Beta 3 *************************
+		Print #Me.m_fileNum, GetDate & " " & GetTime		'************* Modified in Beta 3 *************************
+		Print #Me.m_fileNum, ""
+		
+		Exit Sub
+		
+ErrHandler:
+		Error Err, Error & Chr$(13) & ERR_ONLINE & Erl & ERR_INMODULE & Getthreadinfo(1)
+	End Sub
+	
+	'EndHeader
+	'-------------------------------------------------------
+	Private Sub EndHeader()
+		'Technically this will append the current date/time to the end of the file and not to a "header"
+		On Error Goto ErrHandler
+		
+		Print #Me.m_fileNum, ""
+		Print #Me.m_fileNum, ERROR_COUNT_TXT & ": " & Me.m_errCount		'************* Modified in Beta 3 *************************
+		Print #Me.m_fileNum, ""
+		Print #Me.m_fileNum, GetDate & " " & GetTime		'************* Modified in Beta 3 *************************
+		Print #Me.m_fileNum, LOG_NAME & " " & VERSION_INDICATOR & LOG_MAJOR_VER & VERSION_DELIMITER & LOG_MINOR_VER	'************* Modified in Beta 3 *************************
+		
+		Exit Sub
+		
+ErrHandler:
+		Error Err, Error & Chr$(13) & ERR_ONLINE & Erl & ERR_INMODULE & Getthreadinfo(1)
+	End Sub
+	
+'=======================================================
+'PUBLIC PROPERTIES
+'=======================================================
+	
+	'File
+	'--------------------------------------------------------
+	Public Property Set File As String
+		On Error Goto ErrHandler
+		
+		If file = "" Then
+			Let Me.m_fileName = FILE_NAME
+		Else
+			Let Me.m_fileName = File			
+		End If
+		
+		Exit Property
+		
+ErrHandler:
+		Error Err, Error & Chr$(13) & ERR_ONLINE & Erl & ERR_INMODULE & Getthreadinfo(1)
+	End Property
+	
+	Public Property Get File As String
+		Let File = Me.m_fileName
+	End Property
+End Class
+
+'********************************************************************************************
+'FLOW MESSAGE BOX CLASS
+'********************************************************************************************
+Public Class FlowMsgbox As FlowDocument
+	'Declarations
+	'-------------------------------------------------------
+	Private m_icon As Integer
+	Private m_buttons As Integer
+	Private m_defbutton As Integer
+	Private m_mode As Integer
+	Private m_title As String
+	
+'=======================================================
+'PUBLIC METHODS
+'=======================================================
+	
+	'New (Constructor)
+	'-------------------------------------------------------
+	Public Sub New(db As NotesDatabase)
+		On Error Goto ErrHandler
+		
+		Let Me.m_logType = LOG_TO_MSGBOX
+		
+		'Set defaults
+		Let Me.m_icon = MSGBOX_ICON_NONE
+		Let Me.m_buttons = MSGBOX_BUTTON_OK
+		Let Me.m_mode = MSGBOX_APP_MODAL
+		Let Me.m_defbutton = MSGBOX_DEF_BUTTON_1
+		Let Me.m_title = MSGBOX_TITLE
+		
+		Exit Sub
+		
+ErrHandler:
+		Error Err, Error & Chr$(13) & ERR_ONLINE & Erl & ERR_INMODULE & Getthreadinfo(1)
+	End Sub
+	
+'=======================================================
+'PRIVATE METHODS
+'=======================================================
+	
+	'WriteToMsgbox
+	'-------------------------------------------------------
+	'Writes a message to a message box.
+	'
+	'SYNTAX
+	'	CALL Log(msg$)
+	'
+	'PARAMETERS
+	'	msg$
+	'		String.  The message to be written to the log file.
+	'
+	'RETURN VALUE
+	'	Nothing.
+	'-------------------------------------------------------
+	Private Function WriteToMsgbox(msg As String) As Boolean
+		On Error Goto ErrHandler
+		
+		If msg = "" Then Exit Function
+		Let Me.WriteToMsgbox = Messagebox(msg, Me.m_buttons + Me.m_icon + Me.m_defbutton + Me.m_mode, Me.m_title)
+		
+		Exit Function
+		
+ErrHandler:
+		Error Err, Error & Chr$(13) & ERR_ONLINE & Erl & ERR_INMODULE & Getthreadinfo(1)
+	End Function
+	
+'=======================================================
+'PUBLIC PROPERTIES
+'=======================================================
+	
+	'Icon
+	'-------------------------------------------------------
+	Public Property Set Icon As Integer
+		On Error Goto ErrHandler
+		
+		Select Case Icon
+		Case MSGBOX_ICON_NONE, MSGBOX_ICON_STOP, MSGBOX_ICON_QUESTION, MSGBOX_ICON_EXCLAMATION, MSGBOX_ICON_INFORMATION
+			Let Me.m_icon = Icon
+		Case Else
+			Let Me.m_icon = MSGBOX_ICON_NONE
+		End Select
+		
+		Exit Property
+		
+ErrHandler:
+		Error Err, Error & Chr$(13) & ERR_ONLINE & Erl & ERR_INMODULE & Getthreadinfo(1)
+	End Property
+	
+	Public Property Get Icon As Integer
+		Let Icon = Me.m_icon
+	End Property
+	
+	'Buttons
+	'-------------------------------------------------------
+	Public Property Set Buttons As Integer
+		On Error Goto ErrHandler
+		
+		Select Case Buttons
+		Case MSGBOX_BUTTON_OK, MSGBOX_BUTTON_OKCANCEL, MSGBOX_BUTTON_ABORTRETRYIGNORE, MSGBOX_BUTTON_YESNOCANCEL, MSGBOX_BUTTON_YESNO, MSGBOX_BUTTON_RETRYCANCEL
+			Let Me.m_buttons = Buttons
+		Case Else
+			Let Me.m_buttons = MSGBOX_BUTTON_OK
+		End Select
+		
+		Exit Property
+		
+ErrHandler:
+		Error Err, Error & Chr$(13) & ERR_ONLINE & Erl & ERR_INMODULE & Getthreadinfo(1)
+	End Property
+	
+	Public Property Get Buttons As Integer
+		Let Buttons = Me.m_buttons
+	End Property
+	
+	'DefaultButton
+	'-------------------------------------------------------
+	Public Property Set DefaultButton As Integer
+		On Error Goto ErrHandler
+		
+		Select Case DefaultButton
+		Case MSGBOX_DEF_BUTTON_1, MSGBOX_DEF_BUTTON_2, MSGBOX_DEF_BUTTON_3
+			Let Me.m_defbutton = DefaultButton
+		Case Else
+			Let Me.m_defbutton = MSGBOX_DEF_BUTTON_1
+		End Select
+		
+		Exit Property
+		
+ErrHandler:
+		Error Err, Error & Chr$(13) & ERR_ONLINE & Erl & ERR_INMODULE & Getthreadinfo(1)
+	End Property
+	
+	Public Property Get DefaultButton As Integer
+		Let DefaultButton = Me.m_defbutton
+	End Property
+	
+	'Mode
+	'-------------------------------------------------------
+	Public Property Set Mode As Integer
+		On Error Goto ErrHandler
+		
+		Select Case Mode
+		Case MSGBOX_APP_MODAL, MSGBOX_SYS_MODAL
+			Let Me.m_mode = Mode
+		Case Else
+			Let Me.m_mode = MSGBOX_APP_MODAL
+		End Select
+		
+		Exit Property
+		
+ErrHandler:
+		Error Err, Error & Chr$(13) & ERR_ONLINE & Erl & ERR_INMODULE & Getthreadinfo(1)
+	End Property
+	
+	Public Property Get Mode As Integer
+		Let Mode = Me.m_mode
+	End Property
+End Class
+
+'********************************************************************************************
+'FLOW DOCUMENT FACTORY CLASS
+'********************************************************************************************
+Public Class FlowDocumentFactory
+	
+'=======================================================
+'PUBLIC METHODS
+'=======================================================
+	
+	'BuildDocument
+	'-------------------------------------------------------
+	Public Function BuildDocument(logTo As Integer, db As NotesDatabase) As FlowDocument
+		On Error Goto ErrHandler
+		
+		Select Case logTo
+		Case LOG_TO_DOC
+			Set BuildDocument = New FlowRichTextDocument(db)
+		Case LOG_TO_MAIL
+			Set BuildDocument = New FlowMailDocument(db)
+		Case LOG_TO_FILE
+			Set BuildDocument = New FlowFile(db)
+		Case LOG_TO_CONSOLE
+			Set BuildDocument = New FlowConsole(db)
+		Case LOG_TO_MSGBOX
+			Set BuildDocument = New FlowMsgbox(db)
+		End Select
+		
+		Exit Function
+		
+ErrHandler:
+		Error Err, Error & Chr$(13) & ERR_ONLINE & Erl & ERR_INMODULE & Getthreadinfo(1)
+	End Function
+End Class
